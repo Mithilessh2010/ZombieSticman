@@ -1,0 +1,1 @@
+self.__REACT_LOADABLE_MANIFEST='{"components/GameCanvas.tsx -> @/game/engine":{"id":9282,"files":["static/chunks/282.72615a5534e312f8.js"]}}';

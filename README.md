@@ -1,74 +1,115 @@
-# STICKMAN: LAST STAND 🧟
+# STICKMAN: LAST STAND 🎮
 
-A top-down roguelike zombie survival shooter. Survive endless waves, level up, collect powerful upgrades, and unlock permanent progression.
+A top-down roguelike zombie survival shooter. Survive endless waves, unlock upgrades, and see how long you can last.
 
-## Features
+---
 
-- Top-down stickman shooter with roguelike progression
-- 10+ weapon types with unique feel
-- 8 enemy types including epic bosses
-- 50+ stackable upgrades
-- Permanent meta-progression skill tree
-- Screen shake, particles, damage numbers, and full game juice
-- Dynamic wave difficulty scaling
-- Stat tracking with localStorage
+## 🚀 Play Instantly
 
-## Quick Start
+Just open `index.html` in any modern browser — no install needed.
+
+---
+
+## 🌐 Deploy to Vercel (Free)
 
 ```bash
-npm install
-npm run dev
+# Option 1: Drag & Drop
+# Go to https://vercel.com/new → drag the folder → done
+
+# Option 2: CLI
+npm i -g vercel
+cd stickman-last-stand
+vercel --yes
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+## 🌐 Deploy to Netlify (Free)
 
-## Deploy to Vercel
+1. Go to https://netlify.com
+2. Drag the `stickman-last-stand` folder onto the deploy zone
+3. Live in seconds ⚡
+
+## 🌐 GitHub Pages
 
 ```bash
-npm install -g vercel
-vercel --prod
+git init
+git add .
+git commit -m "launch"
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/stickman-last-stand.git
+git push -u origin main
+# Then: Settings → Pages → Deploy from main branch
 ```
 
-Or connect your GitHub repo at [vercel.com](https://vercel.com) and it auto-deploys.
+---
 
-## Controls
+## 🕹️ Controls
 
 | Key | Action |
 |-----|--------|
 | WASD | Move |
 | Mouse | Aim |
-| Click | Shoot |
-| Shift | Dash |
+| Click (hold) | Shoot / Auto-fire |
+| SHIFT | Dash (3 charges, regen over time) |
 | R | Reload |
+| Q | Grenade (unlock via upgrade) |
+| E | Deploy Turret (unlock via upgrade) |
+| Z | Time Slow (unlock via upgrade) |
+| X | Shield Bubble (unlock via upgrade) |
 | ESC | Pause |
-| 1-5 | Swap Weapon |
 
-## Stack
+---
 
-- **Next.js 14** — App Router, static export
-- **React 18** — UI layer
-- **TypeScript** — Full type safety
-- **TailwindCSS** — Styling
-- **Framer Motion** — UI animations
-- **Zustand** — Game state
-- **HTML5 Canvas** — Game rendering
+## 🎮 Game Features
 
-## Architecture
+### Weapons (9 total)
+- 🔫 Pistol (starter)
+- Shotgun, SMG, Assault Rifle, Sniper, Minigun, Flamethrower, Rocket Launcher, Laser Rifle
+- Unlock via Level Up upgrade cards
+
+### 12+ Enemy Types
+- Walker, Runner, Tank, Spitter, Bomber, Shield Zombie, Shadow (Invisible), Splitter, Elite
+- 4 Boss types every 5th wave: Abomination, Necromancer, Behemoth, Spider Queen
+
+### 30+ Upgrades
+- Weapon stats, movement, abilities, unlocks
+- Rarity tiers: Common → Rare → Epic → Legendary
+
+### Abilities
+- Dash (built-in), Grenade, Turret, Time Slow, Shield Bubble
+
+### Systems
+- Full roguelike XP/leveling loop
+- Persistent kill streak tracker
+- Minimap
+- Screen shake, damage numbers, particles
+- Lifesteal, crit, pierce, chain lightning, triple shot, explosive rounds
+- Armor absorption system
+- Stamina-based dash charges
+- Auto-fire, reload mechanics
+- Wave director with dynamic scaling
+- Boss HP bar + minion spawning
+
+---
+
+## 📁 File Structure
 
 ```
-src/
-├── app/          — Next.js pages & layout
-├── components/   — React UI components (HUD, menus, screens)
-├── game/         — Core game engine (pure TS, no React)
-│   ├── engine.ts     — Game loop & coordinator
-│   ├── player.ts     — Player entity
-│   ├── enemy.ts      — Enemy types & AI
-│   ├── bullet.ts     — Projectile system
-│   ├── particle.ts   — VFX particle system
-│   ├── xporb.ts      — XP pickup
-│   ├── waves.ts      — Wave director AI
-│   ├── upgrades.ts   — Upgrade definitions
-│   └── renderer.ts   — Canvas drawing
-├── store/        — Zustand global store
-└── types/        — TypeScript interfaces
+stickman-last-stand/
+└── index.html    ← Entire game, zero dependencies
 ```
+
+Single self-contained file. No build step. No npm. No node_modules.
+
+---
+
+## 🏆 Tips
+
+- Prioritize XP Sponge + damage upgrades early
+- Unlock the Sniper for boss waves
+- Use Shield before boss attacks
+- Chain Lightning + Explosive Rounds = chaos
+- Stamina regens naturally — dash aggressively
+
+---
+
+*Built with vanilla HTML5 Canvas + CSS. Zero dependencies.*
