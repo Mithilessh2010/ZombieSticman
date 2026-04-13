@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '@/game/systems/gameStore';
 import { GUNS } from '@/game/data/guns';
@@ -14,10 +14,12 @@ export default function ShopScreen() {
   const showGuns = currentWave > 1;
   const tabList = showGuns ? ['guns', 'armor', 'potions'] : ['armor', 'potions'];
 
-  // Ensure tab is valid for current wave
-  if (tab === 'guns' && !showGuns) {
-    setTab('armor');
-  }
+  // Reset tab if it becomes invalid for current wave
+  useEffect(() => {
+    if (tab === 'guns' && !showGuns) {
+      setTab('armor');
+    }
+  }, [showGuns, tab]);
 
   return (
     <motion.div className="absolute inset-0 flex flex-col items-center"
