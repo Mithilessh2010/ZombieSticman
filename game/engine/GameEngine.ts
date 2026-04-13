@@ -37,6 +37,7 @@ export class GameEngine {
   private waveInProgress = false;
   private waveZombieCount = 0;
   private waveCheckDelay = 0;
+  private waveNumber = 1;
 
   constructor(canvas: HTMLCanvasElement, gunId: string, stats: RunStats, cb: EngineCallback, waveNumber: number = 1) {
     this.renderer = new Renderer(canvas);
@@ -49,6 +50,9 @@ export class GameEngine {
     this.cb = cb;
     this.player = new Player(CW / 2 - 14, CH - 100);
     this.waveInProgress = true;
+    this.waveNumber = waveNumber;
+    // Set difficulty based on wave number (each wave increases difficulty by 1)
+    this.elapsed = (waveNumber - 1) * 3;
   }
 
   start() { this.last = performance.now(); this.raf = requestAnimationFrame(this.loop); }
@@ -157,7 +161,7 @@ export class GameEngine {
     // Check if wave is complete (all spawned zombies dead and spawning is done)
     if (this.waveInProgress && this.waveZombieCount >= 10 && this.zombies.length === 0) {
       this.waveCheckDelay += dt;
-      if (this.waveCheckDelay >= 1) {  // Wait 1 second after last zombie dies
+      if (this.waveCheckDelay >= 0.5) {  // Wait 0.5 second after last zombie dies
         this.waveInProgress = false;
         this.cb('waveComplete');
       }
@@ -238,4 +242,5 @@ export class GameEngine {
   getElapsed() { return this.elapsed; }
   getEnemyCount() { return this.zombies.filter(z => !z.dead).length; }
   getDifficulty() { return Math.floor(this.elapsed / 3); }
+  getWave() { return this.waveNumber; }
 }

@@ -5,7 +5,7 @@ import { GUNS } from '@/game/data/guns';
 import { ARMOR } from '@/game/data/armor';
 import { POTIONS } from '@/game/data/potions';
 
-export type Screen = 'menu' | 'shop' | 'inventory' | 'playing' | 'gameover';
+export type Screen = 'menu' | 'shop' | 'inventory' | 'playing' | 'gameover' | 'wave_complete';
 
 interface PersistentState {
   coins: number;
@@ -140,8 +140,17 @@ export const useGameStore = create<GameStore>()(
       },
 
       startRun: () => {
+        const state = get();
+        let gId = state.equippedGunId;
+
+        // If no gun equipped, default to pistol and save it
+        if (!gId) {
+          gId = 'pistol';
+          set({ equippedGunId: gId });
+        }
+
         const base = { ...BASE_RUN_STATS };
-        const armor = get().equippedArmorId ? ARMOR.find((a) => a.id === get().equippedArmorId) : null;
+        const armor = state.equippedArmorId ? ARMOR.find((a) => a.id === state.equippedArmorId) : null;
         const maxHealth = base.maxHealth + (armor?.maxHealthBoost || 0);
         set({
           screen: 'shop',

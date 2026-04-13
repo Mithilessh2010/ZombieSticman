@@ -205,7 +205,7 @@ export default function ShopScreen() {
           style={{ background:'transparent', borderColor:'#4fc3f7', color:'#4fc3f7', fontFamily:'Courier New', cursor:'pointer' }}
           whileHover={{ scale:1.05, backgroundColor: '#4fc3f722' }}
           whileTap={{ scale:0.97 }}>
-          READY FOR WAVE {currentWave + 1}
+          START WAVE {currentWave + 1}
         </motion.button>
       </motion.div>
     </motion.div>

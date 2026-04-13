@@ -35,7 +35,6 @@ export default function GameCanvas() {
       else if (evt === 'xp') { s.addRunXp(val ?? 0); }
       else if (evt === 'coin') { s.addRunCoins(val ?? 0); }
       else if (evt === 'waveComplete') {
-        s.setCurrentWave(s.currentWave + 1);
         s.setScreen('shop');
       }
     }, currentWave);
@@ -70,7 +69,7 @@ export default function GameCanvas() {
       if (!ctx) { rafId = requestAnimationFrame(hudLoop); return; }
       const { runHealth: hp, runStats: rs, runXp, xpToNext, runLevel, runCoins, enemiesKilled, timeAlive } = s;
       const gun = s.equippedGunId ? getGun(s.equippedGunId) : null;
-      const wave = engine.getDifficulty() + 1;
+      const wave = engine.getWave();
       const enemyCount = engine.getEnemyCount();
       // HUD drawn by renderer — call via engine's renderer access
       engine.renderer.drawHUD(
