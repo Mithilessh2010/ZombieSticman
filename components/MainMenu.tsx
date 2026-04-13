@@ -34,13 +34,13 @@ export default function MainMenu() {
       </motion.h2>
       <motion.p className="text-xs mb-10" style={{ color:'#ffd700', fontFamily:'Courier New' }}
         initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.5 }}>
-        💰 {coins} coins saved
+        {coins} coins saved
       </motion.p>
 
       {[
-        { label: '▶  START RUN',  action: startRun,           border:'#4fc3f7', color:'#4fc3f7' },
-        { label: '🛒  SHOP',       action: ()=>setScreen('shop'), border:'#ffd700', color:'#ffd700' },
-        { label: '🎒  INVENTORY',  action: ()=>setScreen('inventory'), border:'#ce93d8', color:'#ce93d8' },
+        { label: 'START RUN',  action: startRun,           border:'#4fc3f7', color:'#4fc3f7' },
+        { label: 'SHOP',       action: ()=>setScreen('shop'), border:'#ffd700', color:'#ffd700' },
+        { label: 'INVENTORY',  action: ()=>setScreen('inventory'), border:'#ce93d8', color:'#ce93d8' },
       ].map((btn, i) => (
         <motion.button key={btn.label}
           className="px-10 py-3 mb-3 text-base tracking-widest border-2 rounded w-56"
@@ -55,7 +55,7 @@ export default function MainMenu() {
 
       <motion.p className="mt-8 text-xs" style={{ color:'#455a64', fontFamily:'Courier New' }}
         initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:1 }}>
-        A/D move · Space jump · Auto-aims nearest zombie
+        A/D move · Space jump · Click shoot · R punch
       </motion.p>
     </motion.div>
   );

@@ -2,13 +2,17 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { RunStats, BASE_RUN_STATS, UpgradeDef, pickUpgrades } from '@/game/data/upgrades';
 import { GUNS } from '@/game/data/guns';
+import { ARMOR } from '@/game/data/armor';
+import { POTIONS } from '@/game/data/potions';
 
-export type Screen = 'menu' | 'shop' | 'inventory' | 'playing' | 'upgrade' | 'gameover';
+export type Screen = 'menu' | 'shop' | 'inventory' | 'playing' | 'gameover';
 
 interface PersistentState {
   coins: number;
   ownedGunIds: string[];
   equippedGunId: string;
+  ownedArmorIds: string[];
+  equippedArmorId: string | null;
 }
 
 interface SessionState {
@@ -21,15 +25,18 @@ interface SessionState {
   xpToNext: number;
   enemiesKilled: number;
   timeAlive: number;
-  upgradeChoices: UpgradeDef[];
+  potionInventory: { id: string; count: number }[];
 }
 
 interface Actions {
   setScreen: (s: Screen) => void;
   buyGun: (id: string) => void;
   equipGun: (id: string) => void;
+  buyArmor: (id: string) => void;
+  equipArmor: (id: string) => void;
+  buyPotion: (id: string, quantity: number) => void;
+  usePotion: (id: string) => void;
   startRun: () => void;
-  applyUpgrade: (id: string) => void;
   addRunCoins: (n: number) => void;
   addRunXp: (n: number) => void;
   addKill: () => void;
@@ -38,7 +45,6 @@ interface Actions {
   setRunHealth: (h: number) => void;
   triggerLevelUp: () => void;
   endRun: () => void;
-  showUpgrades: () => void;
 }
 
 export type GameStore = PersistentState & SessionState & Actions;
@@ -51,8 +57,10 @@ export const useGameStore = create<GameStore>()(
     (set, get) => ({
       // --- persistent ---
       coins: 0,
-      ownedGunIds: ['pistol'],
-      equippedGunId: 'pistol',
+      ownedGunIds: [],
+      equippedGunId: '',
+      ownedArmorIds: [],
+      equippedArmorId: null,
 
       // --- session ---
       screen: 'menu',
@@ -64,7 +72,7 @@ export const useGameStore = create<GameStore>()(
       xpToNext: XP_BASE,
       enemiesKilled: 0,
       timeAlive: 0,
-      upgradeChoices: [],
+      potionInventory: [],
 
       // --- actions ---
       setScreen: (screen) => set({ screen }),
@@ -82,31 +90,60 @@ export const useGameStore = create<GameStore>()(
         if (get().ownedGunIds.includes(id)) set({ equippedGunId: id });
       },
 
+      buyArmor: (id) => {
+        const armor = ARMOR.find((a) => a.id === id);
+        if (!armor) return;
+        const { coins, ownedArmorIds } = get();
+        if (ownedArmorIds.includes(id)) return;
+        if (coins < armor.price) return;
+        set({ coins: coins - armor.price, ownedArmorIds: [...ownedArmorIds, id] });
+      },
+
+      equipArmor: (id) => {
+        if (id === '' || get().ownedArmorIds.includes(id)) set({ equippedArmorId: id || null });
+      },
+
+      buyPotion: (id, quantity) => {
+        const potion = POTIONS.find((p) => p.id === id);
+        if (!potion) return;
+        const { coins, potionInventory } = get();
+        const totalCost = potion.price * quantity;
+        if (coins < totalCost) return;
+        const newInventory = [...potionInventory];
+        const existing = newInventory.find((p) => p.id === id);
+        if (existing) {
+          existing.count += quantity;
+        } else {
+          newInventory.push({ id, count: quantity });
+        }
+        set({ coins: coins - totalCost, potionInventory: newInventory });
+      },
+
+      usePotion: (id) => {
+        const potion = POTIONS.find((p) => p.id === id);
+        if (!potion) return;
+        const { runHealth, potionInventory } = get();
+        const inv = potionInventory.find((p) => p.id === id);
+        if (!inv || inv.count <= 0) return;
+        const newInv = potionInventory.map((p) => p.id === id ? { ...p, count: p.count - 1 } : p).filter((p) => p.count > 0);
+        set({ runHealth: Math.min(runHealth + potion.healAmount, get().runStats.maxHealth), potionInventory: newInv });
+      },
+
       startRun: () => {
         const base = { ...BASE_RUN_STATS };
+        const armor = get().equippedArmorId ? ARMOR.find((a) => a.id === get().equippedArmorId) : null;
+        const maxHealth = base.maxHealth + (armor?.maxHealthBoost || 0);
         set({
           screen: 'playing',
-          runStats: base,
-          runHealth: base.maxHealth,
+          runStats: { ...base, maxHealth },
+          runHealth: maxHealth,
           runCoins: 0,
           runXp: 0,
           runLevel: 1,
           xpToNext: XP_BASE,
           enemiesKilled: 0,
           timeAlive: 0,
-          upgradeChoices: [],
-        });
-      },
-
-      applyUpgrade: (id) => {
-        const { upgradeChoices, runStats, runHealth } = get();
-        const u = upgradeChoices.find((x) => x.id === id);
-        if (!u) return;
-        const newStats = u.apply(runStats);
-        set({
-          runStats: newStats,
-          runHealth: Math.min(runHealth + 10, newStats.maxHealth),
-          screen: 'playing',
+          potionInventory: [],
         });
       },
 
@@ -133,13 +170,15 @@ export const useGameStore = create<GameStore>()(
           runLevel: newLevel,
           runXp: Math.max(0, overflow),
           xpToNext: xpForLevel(newLevel),
-          upgradeChoices: pickUpgrades(3),
-          screen: 'upgrade',
         });
       },
 
       takeDamage: (n) => {
-        const h = get().runHealth - n;
+        const { runHealth, equippedArmorId } = get();
+        const armor = equippedArmorId ? ARMOR.find((a) => a.id === equippedArmorId) : null;
+        const reduction = armor?.damageReduction || 0;
+        const finalDamage = Math.ceil(n * (1 - reduction));
+        const h = runHealth - finalDamage;
         if (h <= 0) {
           set({ runHealth: 0 });
           get().endRun();
@@ -150,8 +189,6 @@ export const useGameStore = create<GameStore>()(
 
       setRunHealth: (runHealth) => set({ runHealth }),
 
-      showUpgrades: () => set({ upgradeChoices: pickUpgrades(3), screen: 'upgrade' }),
-
       endRun: () => {
         const { runCoins, coins } = get();
         set({ coins: coins + runCoins, screen: 'gameover' });
@@ -159,7 +196,13 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'stickman-save',
-      partialize: (s) => ({ coins: s.coins, ownedGunIds: s.ownedGunIds, equippedGunId: s.equippedGunId }),
+      partialize: (s) => ({
+        coins: s.coins,
+        ownedGunIds: s.ownedGunIds,
+        equippedGunId: s.equippedGunId,
+        ownedArmorIds: s.ownedArmorIds,
+        equippedArmorId: s.equippedArmorId,
+      }),
     }
   )
 );

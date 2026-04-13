@@ -1,9 +1,9 @@
 {
   "app/page.tsx -> @/components/GameRoot": {
-    "id": 1227,
+    "id": 3075,
     "files": [
       "static/chunks/119.3f4d9063ee2489c5.js",
-      "static/chunks/227.e530e35e637962df.js"
+      "static/chunks/75.e3e2ca7abaf662d9.js"
     ]
   }
 }

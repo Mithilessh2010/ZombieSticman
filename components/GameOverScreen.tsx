@@ -27,17 +27,17 @@ export default function GameOverScreen() {
       <motion.div className="mb-10 text-center"
         style={{ color:'#90a4ae', fontFamily:'Courier New', lineHeight:2 }}
         initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.5 }}>
-        <p>⏱ Time survived: <span style={{ color:'#4fc3f7' }}>{Math.floor(timeAlive)}s</span></p>
-        <p>☠ Enemies killed: <span style={{ color:'#4fc3f7' }}>{enemiesKilled}</span></p>
-        <p>📚 Level reached: <span style={{ color:'#4fc3f7' }}>{runLevel}</span></p>
-        <p>💰 Coins earned: <span style={{ color:'#ffd700' }}>{runCoins}</span></p>
+        <p>Time survived: <span style={{ color:'#4fc3f7' }}>{Math.floor(timeAlive)}s</span></p>
+        <p>Enemies killed: <span style={{ color:'#4fc3f7' }}>{enemiesKilled}</span></p>
+        <p>Level reached: <span style={{ color:'#4fc3f7' }}>{runLevel}</span></p>
+        <p>Coins earned: <span style={{ color:'#ffd700' }}>{runCoins}</span></p>
         <p className="mt-1" style={{ color:'#ffd700' }}>Total coins: {coins}</p>
       </motion.div>
 
       <div className="flex gap-4">
         {[
-          { label:'▶ PLAY AGAIN', action: startRun, border:'#ef5350', color:'#ef5350' },
-          { label:'🏠 MAIN MENU', action: goMenu,  border:'#546e7a', color:'#90a4ae' },
+          { label:'PLAY AGAIN', action: startRun, border:'#ef5350', color:'#ef5350' },
+          { label:'MAIN MENU', action: goMenu,  border:'#546e7a', color:'#90a4ae' },
         ].map((btn, i) => (
           <motion.button key={btn.label}
             className="px-8 py-3 text-sm tracking-widest border-2 rounded"

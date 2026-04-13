@@ -75,16 +75,6 @@ export default function GameCanvas() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen]);
 
-  // When screen changes to upgrade, pause engine; when back to playing, resume
-  useEffect(() => {
-    if (!engineRef.current) return;
-    if (screen === 'upgrade') {
-      engineRef.current.pause();
-    } else if (screen === 'playing') {
-      engineRef.current.resume(runStats);
-    }
-  }, [screen, runStats]);
-
   return (
     <canvas
       ref={canvasRef}
