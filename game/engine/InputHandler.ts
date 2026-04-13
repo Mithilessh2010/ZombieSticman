@@ -18,7 +18,7 @@ export class InputHandler {
   private kd = (e: KeyboardEvent) => {
     if (!this.held.has(e.code)) this.pressed.add(e.code);
     this.held.add(e.code);
-    if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+    if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW'].includes(e.code)) e.preventDefault();
   };
 
   private ku = (e: KeyboardEvent) => { this.held.delete(e.code); };
@@ -57,4 +57,6 @@ export class InputHandler {
   left()  { return this.isHeld('KeyA') || this.isHeld('ArrowLeft'); }
   right() { return this.isHeld('KeyD') || this.isHeld('ArrowRight'); }
   jump()  { return this.wasPressed('Space') || this.wasPressed('ArrowUp') || this.wasPressed('KeyW'); }
+  inventory() { return this.wasPressed('KeyI'); }
 }
+

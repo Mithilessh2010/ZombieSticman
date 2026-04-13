@@ -10,7 +10,7 @@ import { EnemySpawner } from '@/game/systems/EnemySpawner';
 import { RunStats } from '@/game/data/upgrades';
 import { GunDef, getGun } from '@/game/data/guns';
 
-export type EngineEvent = 'damage' | 'kill' | 'xp' | 'coin' | 'dead' | 'levelup';
+export type EngineEvent = 'damage' | 'kill' | 'xp' | 'coin' | 'dead' | 'levelup' | 'waveComplete';
 export type EngineCallback = (e: EngineEvent, val?: number) => void;
 
 const CW = 960;
@@ -34,8 +34,11 @@ export class GameEngine {
   private elapsed = 0;
   private cb: EngineCallback;
   private paused = false;
+  private waveInProgress = false;
+  private waveZombieCount = 0;
+  private waveCheckDelay = 0;
 
-  constructor(canvas: HTMLCanvasElement, gunId: string, stats: RunStats, cb: EngineCallback) {
+  constructor(canvas: HTMLCanvasElement, gunId: string, stats: RunStats, cb: EngineCallback, waveNumber: number = 1) {
     this.renderer = new Renderer(canvas);
     this.input = new InputHandler(canvas);
     this.particles = new ParticleSystem();
@@ -45,6 +48,7 @@ export class GameEngine {
     this.stats = stats;
     this.cb = cb;
     this.player = new Player(CW / 2 - 14, CH - 100);
+    this.waveInProgress = true;
   }
 
   start() { this.last = performance.now(); this.raf = requestAnimationFrame(this.loop); }
@@ -83,9 +87,16 @@ export class GameEngine {
       p.fireCooldown = 1 / (this.gun.fireRate * this.stats.fireRateMult);
     }
 
-    // spawn zombies
-    const newZ = this.spawner.update(dt, Math.floor(this.elapsed / 3));
-    this.zombies.push(...newZ);
+    // spawn zombies (max 10 per wave)
+    if (this.waveInProgress && this.waveZombieCount < 10) {
+      const newZ = this.spawner.update(dt, Math.floor(this.elapsed / 3));
+      for (const z of newZ) {
+        if (this.waveZombieCount < 10) {
+          this.zombies.push(z);
+          this.waveZombieCount++;
+        }
+      }
+    }
 
     // update zombies
     for (const z of this.zombies) {
@@ -142,6 +153,15 @@ export class GameEngine {
     // clean up dead entities
     this.zombies = this.zombies.filter(z => !z.dead);
     this.bullets = this.bullets.filter(b => !b.dead);
+
+    // Check if wave is complete (all spawned zombies dead and spawning is done)
+    if (this.waveInProgress && this.waveZombieCount >= 10 && this.zombies.length === 0) {
+      this.waveCheckDelay += dt;
+      if (this.waveCheckDelay >= 1) {  // Wait 1 second after last zombie dies
+        this.waveInProgress = false;
+        this.cb('waveComplete');
+      }
+    }
   }
 
   private fireBullets(tx: number, ty: number) {
@@ -211,7 +231,7 @@ export class GameEngine {
     for (const d of this.drops) this.renderer.drawDrop(d);
     for (const z of this.zombies) this.renderer.drawZombie(z);
     for (const b of this.bullets) this.renderer.drawBullet(b);
-    this.renderer.drawPlayer(this.player);
+    this.renderer.drawPlayer(this.player, this.gun !== null);
     this.renderer.drawParticles(this.particles);
   }
 

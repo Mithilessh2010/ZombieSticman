@@ -14,7 +14,7 @@ export default function GameCanvas() {
   const {
     equippedGunId, runStats, runHealth,
     takeDamage, addKill, addRunXp, addRunCoins,
-    tickTime, screen, endRun,
+    tickTime, screen, endRun, setScreen, currentWave, setCurrentWave,
   } = useGameStore();
 
   useEffect(() => {
@@ -34,10 +34,26 @@ export default function GameCanvas() {
       else if (evt === 'kill') { s.addKill(); }
       else if (evt === 'xp') { s.addRunXp(val ?? 0); }
       else if (evt === 'coin') { s.addRunCoins(val ?? 0); }
-    });
+      else if (evt === 'waveComplete') {
+        s.setCurrentWave(s.currentWave + 1);
+        s.setScreen('shop');
+      }
+    }, currentWave);
 
     engineRef.current = engine;
     engine.start();
+
+    // Inventory key listener
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'KeyI') {
+        e.preventDefault();
+        const s = useGameStore.getState();
+        if (s.screen === 'playing') {
+          s.setScreen('inventory');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
 
     // HUD draw loop (canvas draws its own HUD separately so we can read zustand)
     let rafId = 0;
@@ -70,6 +86,7 @@ export default function GameCanvas() {
     return () => {
       engine.stop();
       cancelAnimationFrame(rafId);
+      window.removeEventListener('keydown', handleKeyDown);
       engineRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -5,9 +5,11 @@ import { GUNS } from '@/game/data/guns';
 import { ARMOR } from '@/game/data/armor';
 
 export default function InventoryScreen() {
-  const { ownedGunIds, equippedGunId, equipGun, ownedArmorIds, equippedArmorId, equipArmor, setScreen } = useGameStore();
+  const { ownedGunIds, equippedGunId, equipGun, ownedArmorIds, equippedArmorId, equipArmor, setScreen, currentWave } = useGameStore();
   const ownedGuns = GUNS.filter(g => ownedGunIds.includes(g.id));
   const ownedArmors = ARMOR.filter(a => ownedArmorIds.includes(a.id));
+  const isInGame = currentWave > 0;
+  const backDestination = isInGame ? 'playing' : 'menu';
 
   return (
     <motion.div className="absolute inset-0 flex flex-col items-center"
@@ -15,7 +17,7 @@ export default function InventoryScreen() {
       initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}>
 
       <div className="w-full flex items-center justify-between px-8 pt-6 pb-4">
-        <motion.button onClick={() => setScreen('menu')}
+        <motion.button onClick={() => setScreen(backDestination as any)}
           className="text-sm px-4 py-2 border rounded"
           style={{ borderColor:'#546e7a', color:'#90a4ae', fontFamily:'Courier New', cursor:'pointer' }}
           whileHover={{ scale:1.05 }}>

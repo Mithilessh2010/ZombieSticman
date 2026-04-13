@@ -110,8 +110,8 @@ export class Renderer {
     }
   }
 
-  drawPlayer(p: Player) {
-    this.stickman(p.x, p.y, p.w, p.h, '#4fc3f7', p.facing, p.flashTimer > 0, true, p.mouseAngle, p.punchCooldown);
+  drawPlayer(p: Player, armed = true) {
+    this.stickman(p.x, p.y, p.w, p.h, '#4fc3f7', p.facing, p.flashTimer > 0, armed, p.mouseAngle, p.punchCooldown);
   }
 
   drawZombie(z: Zombie) {
