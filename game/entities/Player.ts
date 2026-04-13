@@ -12,6 +12,8 @@ export class Player {
   flashTimer = 0;
   invTimer = 0;
   fireCooldown = 0;
+  punchCooldown = 0;
+  mouseAngle = 0;
 
   constructor(x: number, y: number) { this.x = x; this.y = y; }
 
@@ -19,6 +21,13 @@ export class Player {
     if (this.flashTimer > 0) this.flashTimer -= dt;
     if (this.invTimer > 0) this.invTimer -= dt;
     if (this.fireCooldown > 0) this.fireCooldown -= dt;
+    if (this.punchCooldown > 0) this.punchCooldown -= dt;
+
+    // track mouse angle for arm rotation
+    const mousePos = input.getMousePos();
+    const dx = mousePos.x - this.cx();
+    const dy = mousePos.y - this.cy();
+    this.mouseAngle = Math.atan2(dy, dx);
 
     if (input.left())  { this.vx = -stats.speed; this.facing = -1; }
     else if (input.right()) { this.vx = stats.speed; this.facing = 1; }

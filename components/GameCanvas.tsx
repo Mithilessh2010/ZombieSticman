@@ -53,11 +53,14 @@ export default function GameCanvas() {
       const ctx = canvas.getContext('2d');
       if (!ctx) { rafId = requestAnimationFrame(hudLoop); return; }
       const { runHealth: hp, runStats: rs, runXp, xpToNext, runLevel, runCoins, enemiesKilled, timeAlive } = s;
-      const gun = getGun(s.equippedGunId);
+      const gun = s.equippedGunId ? getGun(s.equippedGunId) : null;
+      const wave = engine.getDifficulty() + 1;
+      const enemyCount = engine.getEnemyCount();
       // HUD drawn by renderer — call via engine's renderer access
       engine.renderer.drawHUD(
         hp, rs.maxHealth, runXp, xpToNext, runLevel, runCoins, enemiesKilled, timeAlive,
-        gun.name, gun.color
+        gun?.name || 'Fists', gun?.color || '#fff',
+        wave, enemyCount
       );
 
       rafId = requestAnimationFrame(hudLoop);

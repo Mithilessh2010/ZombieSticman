@@ -29,7 +29,7 @@ export class Renderer {
 
   private stickman(
     x: number, y: number, w: number, h: number,
-    color: string, facing: number, flash: boolean, armed = false
+    color: string, facing: number, flash: boolean, armed = false, mouseAngle?: number
   ) {
     const ctx = this.ctx;
     ctx.strokeStyle = flash ? '#fff' : color;
@@ -51,7 +51,15 @@ export class Renderer {
     // arms
     const ay = bodyTop + (bodyBot - bodyTop)*0.28;
     if (armed) {
-      ctx.beginPath(); ctx.moveTo(cx, ay); ctx.lineTo(cx + facing * w*0.65, ay); ctx.stroke();
+      if (mouseAngle !== undefined) {
+        // Draw arm pointing at mouse angle
+        const armLen = w * 0.65;
+        const armEndX = cx + Math.cos(mouseAngle) * armLen;
+        const armEndY = ay + Math.sin(mouseAngle) * armLen;
+        ctx.beginPath(); ctx.moveTo(cx, ay); ctx.lineTo(armEndX, armEndY); ctx.stroke();
+      } else {
+        ctx.beginPath(); ctx.moveTo(cx, ay); ctx.lineTo(cx + facing * w*0.65, ay); ctx.stroke();
+      }
       ctx.beginPath(); ctx.moveTo(cx, ay); ctx.lineTo(cx - facing * w*0.35, ay + h*0.12); ctx.stroke();
     } else {
       ctx.beginPath(); ctx.moveTo(cx, ay); ctx.lineTo(cx + facing * w*0.38, ay + h*0.14); ctx.stroke();
@@ -60,7 +68,7 @@ export class Renderer {
   }
 
   drawPlayer(p: Player) {
-    this.stickman(p.x, p.y, p.w, p.h, '#4fc3f7', p.facing, p.flashTimer > 0, true);
+    this.stickman(p.x, p.y, p.w, p.h, '#4fc3f7', p.facing, p.flashTimer > 0, true, p.mouseAngle);
   }
 
   drawZombie(z: Zombie) {
@@ -103,7 +111,8 @@ export class Renderer {
     health: number, maxHealth: number,
     xp: number, xpNext: number,
     level: number, coins: number, kills: number, time: number,
-    gunName: string, gunColor: string
+    gunName: string, gunColor: string,
+    wave: number, enemyCount: number
   ) {
     const ctx = this.ctx;
     const pad = 12;
@@ -129,21 +138,28 @@ export class Renderer {
     ctx.fillStyle = '#e0e0e0'; ctx.font = '9px Courier New';
     ctx.fillText(`LVL ${level}  XP ${xp}/${xpNext}`, pad+4, xby+10);
 
-    // coins & kills & time
+    // Coins, kills, time (no emojis)
     ctx.fillStyle = '#ffd700'; ctx.font = '13px Courier New';
-    ctx.fillText(`💰 ${coins}`, pad, xby + 30);
+    ctx.fillText(`Coins: ${coins}`, pad, xby + 30);
     ctx.fillStyle = '#90a4ae'; ctx.font = '12px Courier New';
-    ctx.fillText(`☠ ${kills}   ⏱ ${Math.floor(time)}s`, pad, xby + 48);
+    ctx.fillText(`Kills: ${kills}   Time: ${Math.floor(time)}s`, pad, xby + 48);
 
-    // gun name top-right
-    const gx = this.w - 130;
-    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(gx - 6, pad - 2, 128, 22);
-    ctx.fillStyle = gunColor; ctx.font = 'bold 13px Courier New'; ctx.textAlign = 'right';
-    ctx.fillText(`🔫 ${gunName}`, this.w - pad, pad + 13);
+    // Wave # and zombie count (top-right)
+    const gx = this.w - 200;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(gx - 6, pad - 2, 200, 22);
+    ctx.fillStyle = '#4fc3f7'; ctx.font = 'bold 13px Courier New'; ctx.textAlign = 'right';
+    ctx.fillText(`Wave: ${wave}  Zombies: ${enemyCount}`, this.w - pad, pad + 13);
     ctx.textAlign = 'left';
 
-    // controls hint
-    ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.font = '9px Courier New';
-    ctx.fillText('A/D: Move  Space: Jump  Auto-shoots nearest zombie', pad, this.h - 8);
+    // Gun name
+    const gunX = this.w - 140;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(gunX - 6, xby - 2, 140, 22);
+    ctx.fillStyle = gunColor; ctx.font = 'bold 13px Courier New'; ctx.textAlign = 'right';
+    ctx.fillText(gunName || 'Fists', this.w - pad, xby + 13);
+    ctx.textAlign = 'left';
+
+    // Controls hint (enhanced visibility)
+    ctx.fillStyle = '#fff'; ctx.font = '11px Courier New'; ctx.textAlign = 'left';
+    ctx.fillText('A/D: Move  Space: Jump  Click: Shoot  R: Punch  I: Inventory', pad, this.h - 8);
   }
 }

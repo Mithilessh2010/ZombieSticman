@@ -25,7 +25,7 @@ export class GameEngine {
   private bullets: Bullet[] = [];
   private drops: Drop[] = [];
   private spawner: EnemySpawner;
-  private gun: GunDef;
+  private gun: GunDef | null;
   private stats: RunStats;
   private raf = 0;
   private last = 0;
@@ -35,10 +35,10 @@ export class GameEngine {
 
   constructor(canvas: HTMLCanvasElement, gunId: string, stats: RunStats, cb: EngineCallback) {
     this.renderer = new Renderer(canvas);
-    this.input = new InputHandler();
+    this.input = new InputHandler(canvas);
     this.particles = new ParticleSystem();
     this.spawner = new EnemySpawner(CW, GROUND_Y);
-    this.gun = getGun(gunId);
+    this.gun = gunId ? getGun(gunId) : null;
     this.stats = stats;
     this.cb = cb;
     this.player = new Player(CW / 2 - 14, GROUND_Y - 56);
@@ -64,13 +64,17 @@ export class GameEngine {
     const p = this.player;
     p.update(dt, this.input, this.stats, GROUND_Y, CW);
 
-    // auto shoot
-    if (p.fireCooldown <= 0) {
-      const target = this.nearestZombie();
-      if (target) {
-        this.fireBullets(target.cx(), target.cy());
-        p.fireCooldown = 1 / (this.gun.fireRate * this.stats.fireRateMult);
-      }
+    // handle punch attack
+    if (this.input.punch() && p.punchCooldown <= 0) {
+      this.punch();
+      p.punchCooldown = 0.5;
+    }
+
+    // handle gun shooting (mouse click, only if gun equipped)
+    if (this.gun && this.input.isMouseClicked() && p.fireCooldown <= 0) {
+      const mousePos = this.input.getMousePos();
+      this.fireBullets(mousePos.x, mousePos.y);
+      p.fireCooldown = 1 / (this.gun.fireRate * this.stats.fireRateMult);
     }
 
     // spawn zombies
@@ -132,6 +136,7 @@ export class GameEngine {
   }
 
   private fireBullets(tx: number, ty: number) {
+    if (!this.gun) return;
     const g = this.gun;
     const ox = this.player.cx();
     const oy = this.player.y + this.player.h * 0.35;
@@ -150,6 +155,26 @@ export class GameEngine {
       }
     }
     this.player.facing = tx > this.player.cx() ? 1 : -1;
+  }
+
+  private punch() {
+    const px = this.player.cx();
+    const py = this.player.cy();
+    const range = 80;
+    const damage = Math.round(15 * this.stats.damageMult);
+
+    for (const z of this.zombies) {
+      if (z.dead) continue;
+      const dist = Math.hypot(z.cx() - px, z.cy() - py);
+      if (dist < range) {
+        const killed = z.hit(damage);
+        this.particles.emit(z.cx(), z.cy(), '#ff6f00', 5, 100);
+        if (killed) {
+          this.cb('kill');
+          this.spawnDrops(z);
+        }
+      }
+    }
   }
 
   private nearestZombie(): Zombie | null {
@@ -181,4 +206,6 @@ export class GameEngine {
   }
 
   getElapsed() { return this.elapsed; }
+  getEnemyCount() { return this.zombies.filter(z => !z.dead).length; }
+  getDifficulty() { return Math.floor(this.elapsed / 3); }
 }
