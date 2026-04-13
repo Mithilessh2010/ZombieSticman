@@ -40,7 +40,7 @@ export class Renderer {
 
   private stickman(
     x: number, y: number, w: number, h: number,
-    color: string, facing: number, flash: boolean, armed = false, mouseAngle?: number
+    color: string, facing: number, flash: boolean, armed = false, mouseAngle?: number, punchCooldown?: number
   ) {
     const ctx = this.ctx;
     ctx.strokeStyle = flash ? '#fff' : color;
@@ -61,6 +61,10 @@ export class Renderer {
     ctx.beginPath(); ctx.moveTo(cx, bodyBot); ctx.lineTo(cx + w*0.28, legY); ctx.stroke();
     // arms
     const ay = bodyTop + (bodyBot - bodyTop)*0.28;
+
+    // Punch animation - wind up when punching
+    const isPunching = punchCooldown !== undefined && punchCooldown >= 0.4;
+
     if (armed) {
       if (mouseAngle !== undefined) {
         // Draw arm pointing at mouse angle
@@ -68,18 +72,46 @@ export class Renderer {
         const armEndX = cx + Math.cos(mouseAngle) * armLen;
         const armEndY = ay + Math.sin(mouseAngle) * armLen;
         ctx.beginPath(); ctx.moveTo(cx, ay); ctx.lineTo(armEndX, armEndY); ctx.stroke();
+
+        // Draw gun skin - gun glow effect
+        ctx.strokeStyle = flash ? '#fff' : '#4fc3f7';
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = '#4fc3f7';
+        ctx.shadowBlur = 8;
+        ctx.beginPath(); ctx.moveTo(armEndX - 8, armEndY); ctx.lineTo(armEndX + 8, armEndY); ctx.stroke();
+        ctx.shadowBlur = 0;
       } else {
         ctx.beginPath(); ctx.moveTo(cx, ay); ctx.lineTo(cx + facing * w*0.65, ay); ctx.stroke();
+
+        // Draw gun skin - gun glow effect on idle
+        ctx.strokeStyle = flash ? '#fff' : '#4fc3f7';
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = '#4fc3f7';
+        ctx.shadowBlur = 8;
+        const gunEndX = cx + facing * w*0.65;
+        ctx.beginPath(); ctx.moveTo(gunEndX - 6, ay); ctx.lineTo(gunEndX + 6, ay); ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = flash ? '#fff' : color;
+        ctx.lineWidth = 2.5;
       }
       ctx.beginPath(); ctx.moveTo(cx, ay); ctx.lineTo(cx - facing * w*0.35, ay + h*0.12); ctx.stroke();
     } else {
-      ctx.beginPath(); ctx.moveTo(cx, ay); ctx.lineTo(cx + facing * w*0.38, ay + h*0.14); ctx.stroke();
+      if (isPunching) {
+        // Punch animation - extended punch
+        ctx.strokeStyle = flash ? '#fff' : '#ff6f00';
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(cx, ay); ctx.lineTo(cx + facing * w*0.65, ay + h*0.1); ctx.stroke();
+        ctx.strokeStyle = flash ? '#fff' : color;
+        ctx.lineWidth = 2.5;
+      } else {
+        ctx.beginPath(); ctx.moveTo(cx, ay); ctx.lineTo(cx + facing * w*0.38, ay + h*0.14); ctx.stroke();
+      }
       ctx.beginPath(); ctx.moveTo(cx, ay); ctx.lineTo(cx - facing * w*0.38, ay + h*0.14); ctx.stroke();
     }
   }
 
   drawPlayer(p: Player) {
-    this.stickman(p.x, p.y, p.w, p.h, '#4fc3f7', p.facing, p.flashTimer > 0, true, p.mouseAngle);
+    this.stickman(p.x, p.y, p.w, p.h, '#4fc3f7', p.facing, p.flashTimer > 0, true, p.mouseAngle, p.punchCooldown);
   }
 
   drawZombie(z: Zombie) {

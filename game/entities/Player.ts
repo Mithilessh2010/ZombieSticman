@@ -7,7 +7,7 @@ export class Player {
   x: number; y: number;
   w = 28; h = 56;
   vx = 0; vy = 0;
-  onGround = false;
+  onGround = true;
   facing = 1;
   flashTimer = 0;
   invTimer = 0;
@@ -39,7 +39,7 @@ export class Player {
     this.x += this.vx * dt;
     this.y += this.vy * dt;
 
-    // ground
+    // ground fallback (for safety, in case platform collision doesn't catch it)
     if (this.y + this.h >= groundY) { this.y = groundY - this.h; this.vy = 0; this.onGround = true; }
     // walls
     this.x = Math.max(0, Math.min(cw - this.w, this.x));
