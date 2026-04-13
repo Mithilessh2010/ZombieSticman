@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useGameStore } from '@/game/systems/gameStore';
 import { GameEngine } from '@/game/engine/GameEngine';
+import { getGun } from '@/game/data/guns';
 
 const CW = 960, CH = 540;
 
@@ -52,7 +53,6 @@ export default function GameCanvas() {
       const ctx = canvas.getContext('2d');
       if (!ctx) { rafId = requestAnimationFrame(hudLoop); return; }
       const { runHealth: hp, runStats: rs, runXp, xpToNext, runLevel, runCoins, enemiesKilled, timeAlive } = s;
-      const { getGun } = await import('@/game/data/guns');
       const gun = getGun(s.equippedGunId);
       // HUD drawn by renderer — call via engine's renderer access
       engine.renderer.drawHUD(

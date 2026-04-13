@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useGameStore } from '@/game/systems/gameStore';
 
 export default function GameOverScreen() {
-  const { timeAlive, enemiesKilled, runLevel, runCoins, resetGame, startRun, setScreen, coins } = useGameStore();
+  const { timeAlive, enemiesKilled, runLevel, runCoins, startRun, setScreen, coins } = useGameStore();
 
   // resetGame isn't defined — we just go back to menu (coins were banked on endRun)
   const goMenu = () => setScreen('menu');
