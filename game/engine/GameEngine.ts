@@ -91,11 +91,14 @@ export class GameEngine {
       p.fireCooldown = 1 / (this.gun.fireRate * this.stats.fireRateMult);
     }
 
-    // spawn zombies (max 10 per wave)
-    if (this.waveInProgress && this.waveZombieCount < 10) {
-      const newZ = this.spawner.update(dt, Math.floor(this.elapsed / 3));
+    // Calculate target zombie count for this wave
+    const targetZombies = 10 + Math.min(this.waveNumber - 1, 5) * 5; // 10, 15, 20, 25, 30...
+
+    // spawn zombies
+    if (this.waveInProgress && this.waveZombieCount < targetZombies) {
+      const newZ = this.spawner.update(dt, Math.floor(this.elapsed / 3), this.waveNumber);
       for (const z of newZ) {
-        if (this.waveZombieCount < 10) {
+        if (this.waveZombieCount < targetZombies) {
           this.zombies.push(z);
           this.waveZombieCount++;
         }
@@ -134,6 +137,10 @@ export class GameEngine {
         if (killed) {
           this.cb('kill');
           this.spawnDrops(z);
+          // Handle explosion on exploder death
+          if (z.type === 'exploder' && z.explodeRadius > 0) {
+            this.triggerExplosion(z.cx(), z.cy(), z.explodeRadius, z.explodeDamage);
+          }
         }
         if (b.dead) break;
       }
@@ -158,10 +165,10 @@ export class GameEngine {
     this.zombies = this.zombies.filter(z => !z.dead);
     this.bullets = this.bullets.filter(b => !b.dead);
 
-    // Check if wave is complete (all spawned zombies dead and spawning is done)
-    if (this.waveInProgress && this.waveZombieCount >= 10 && this.zombies.length === 0) {
+    // Check if wave is complete
+    if (this.waveInProgress && this.waveZombieCount >= targetZombies && this.zombies.length === 0) {
       this.waveCheckDelay += dt;
-      if (this.waveCheckDelay >= 0.5) {  // Wait 0.5 second after last zombie dies
+      if (this.waveCheckDelay >= 0.5) {
         this.waveInProgress = false;
         this.cb('waveComplete');
       }
@@ -226,6 +233,29 @@ export class GameEngine {
     const ey = z.y;
     this.drops.push(new Drop(ex, ey, 'xp', z.xpValue));
     if (Math.random() < 0.55) this.drops.push(new Drop(ex + 16, ey, 'coin', z.coinValue));
+  }
+
+  private triggerExplosion(cx: number, cy: number, radius: number, damage: number) {
+    for (const z of this.zombies) {
+      if (z.dead) continue;
+      const d = Math.hypot(z.cx() - cx, z.cy() - cy);
+      if (d < radius) {
+        const killed = z.hit(damage);
+        this.particles.emit(z.cx(), z.cy(), '#ff4500', 6, 120);
+        if (killed) {
+          this.cb('kill');
+          this.spawnDrops(z);
+        }
+      }
+    }
+    // Explosion visual
+    for (let i = 0; i < 20; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = Math.random() * radius * 0.8;
+      const px = cx + Math.cos(angle) * dist;
+      const py = cy + Math.sin(angle) * dist;
+      this.particles.emit(px, py, '#ff6f00', 5, 150);
+    }
   }
 
   private draw() {

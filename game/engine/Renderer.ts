@@ -115,13 +115,30 @@ export class Renderer {
   }
 
   drawZombie(z: Zombie) {
-    const color = z.type === 'tank' ? '#ef5350' : z.type === 'fast' ? '#ffb300' : '#81c784';
+    let color: string;
+    if (z.type === 'miniboss') color = '#e91e63';
+    else if (z.type === 'exploder') color = '#ff4500';
+    else if (z.type === 'tank') color = '#ef5350';
+    else if (z.type === 'fast') color = '#ffb300';
+    else color = '#81c784';
+
     this.stickman(z.x, z.y, z.w, z.h, color, z.facing, z.flashTimer > 0, false);
+
     // health bar
     const bw = z.w; const bh = 4;
     this.ctx.fillStyle = '#222'; this.ctx.fillRect(z.x, z.y - 9, bw, bh);
-    this.ctx.fillStyle = z.type === 'tank' ? '#ef5350' : z.type === 'fast' ? '#ffb300' : '#66bb6a';
+    this.ctx.fillStyle = color;
     this.ctx.fillRect(z.x, z.y - 9, bw * (z.health / z.maxHealth), bh);
+
+    // Mini boss special indicator
+    if (z.type === 'miniboss') {
+      this.ctx.strokeStyle = '#e91e63';
+      this.ctx.lineWidth = 3;
+      this.ctx.shadowColor = '#e91e63';
+      this.ctx.shadowBlur = 12;
+      this.ctx.strokeRect(z.x - 4, z.y - 14, z.w + 8, z.h + 8);
+      this.ctx.shadowBlur = 0;
+    }
   }
 
   drawBullet(b: Bullet) {

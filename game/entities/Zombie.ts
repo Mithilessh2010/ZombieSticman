@@ -1,6 +1,6 @@
 const GRAVITY = 720;
 
-export type ZombieType = 'basic' | 'fast' | 'tank';
+export type ZombieType = 'basic' | 'fast' | 'tank' | 'exploder' | 'miniboss';
 
 export class Zombie {
   x: number; y: number;
@@ -15,22 +15,37 @@ export class Zombie {
   flashTimer = 0;
   attackCooldown = 0;
   dead = false;
+  explodeRadius = 0;
+  explodeDamage = 0;
 
   constructor(x: number, y: number, type: ZombieType, diff: number) {
     this.x = x; this.y = y; this.type = type;
     const d = 1 + diff * 0.06;
-    if (type === 'tank') {
+    if (type === 'miniboss') {
+      this.w = 50; this.h = 80;
+      this.speed = 90 * d; this.maxHealth = Math.round(400 * d);
+      this.damage = 25; this.xpValue = 60; this.coinValue = 15;
+      this.explodeRadius = 0; this.explodeDamage = 0;
+    } else if (type === 'exploder') {
+      this.w = 32; this.h = 58;
+      this.speed = 135 * d; this.maxHealth = Math.round(65 * d);
+      this.damage = 14; this.xpValue = 15; this.coinValue = 4;
+      this.explodeRadius = 120; this.explodeDamage = 35;
+    } else if (type === 'tank') {
       this.w = 38; this.h = 68;
       this.speed = 75 * d; this.maxHealth = Math.round(120 * d);
       this.damage = 18; this.xpValue = 18; this.coinValue = 3;
+      this.explodeRadius = 0; this.explodeDamage = 0;
     } else if (type === 'fast') {
       this.w = 24; this.h = 50;
       this.speed = 210 * d; this.maxHealth = Math.round(28 * d);
       this.damage = 10; this.xpValue = 10; this.coinValue = 2;
+      this.explodeRadius = 0; this.explodeDamage = 0;
     } else {
       this.w = 28; this.h = 56;
       this.speed = 105 * d; this.maxHealth = Math.round(45 * d);
       this.damage = 12; this.xpValue = 8; this.coinValue = 1;
+      this.explodeRadius = 0; this.explodeDamage = 0;
     }
     this.health = this.maxHealth;
   }
