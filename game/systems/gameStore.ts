@@ -17,6 +17,7 @@ interface PersistentState {
 
 interface SessionState {
   screen: Screen;
+  currentWave: number;
   runStats: RunStats;
   runHealth: number;
   runCoins: number;
@@ -37,6 +38,8 @@ interface Actions {
   buyPotion: (id: string, quantity: number) => void;
   usePotion: (id: string) => void;
   startRun: () => void;
+  setCurrentWave: (w: number) => void;
+  continueToNextWave: () => void;
   addRunCoins: (n: number) => void;
   addRunXp: (n: number) => void;
   addKill: () => void;
@@ -64,6 +67,7 @@ export const useGameStore = create<GameStore>()(
 
       // --- session ---
       screen: 'menu',
+      currentWave: 0,
       runStats: { ...BASE_RUN_STATS },
       runHealth: BASE_RUN_STATS.maxHealth,
       runCoins: 0,
@@ -76,6 +80,12 @@ export const useGameStore = create<GameStore>()(
 
       // --- actions ---
       setScreen: (screen) => set({ screen }),
+
+      setCurrentWave: (wave) => set({ currentWave: wave }),
+
+      continueToNextWave: () => {
+        set({ screen: 'playing', currentWave: get().currentWave + 1 });
+      },
 
       buyGun: (id) => {
         const gun = GUNS.find((g) => g.id === id);
@@ -134,7 +144,8 @@ export const useGameStore = create<GameStore>()(
         const armor = get().equippedArmorId ? ARMOR.find((a) => a.id === get().equippedArmorId) : null;
         const maxHealth = base.maxHealth + (armor?.maxHealthBoost || 0);
         set({
-          screen: 'playing',
+          screen: 'shop',
+          currentWave: 1,
           runStats: { ...base, maxHealth },
           runHealth: maxHealth,
           runCoins: 0,

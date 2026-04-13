@@ -39,8 +39,6 @@ export default function MainMenu() {
 
       {[
         { label: 'START RUN',  action: startRun,           border:'#4fc3f7', color:'#4fc3f7' },
-        { label: 'SHOP',       action: ()=>setScreen('shop'), border:'#ffd700', color:'#ffd700' },
-        { label: 'INVENTORY',  action: ()=>setScreen('inventory'), border:'#ce93d8', color:'#ce93d8' },
       ].map((btn, i) => (
         <motion.button key={btn.label}
           className="px-10 py-3 mb-3 text-base tracking-widest border-2 rounded w-56"
