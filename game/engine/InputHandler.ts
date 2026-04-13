@@ -1,57 +1,26 @@
 export class InputHandler {
-  private keys: Set<string> = new Set();
-  private justPressed: Set<string> = new Set();
+  private held = new Set<string>();
+  private pressed = new Set<string>();
 
   constructor() {
-    window.addEventListener('keydown', this.onKeyDown);
-    window.addEventListener('keyup', this.onKeyUp);
+    window.addEventListener('keydown', this.kd);
+    window.addEventListener('keyup', this.ku);
   }
-
-  private onKeyDown = (e: KeyboardEvent) => {
-    if (!this.keys.has(e.code)) {
-      this.justPressed.add(e.code);
-    }
-    this.keys.add(e.code);
-    // prevent arrow key scroll
-    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) {
-      e.preventDefault();
-    }
+  private kd = (e: KeyboardEvent) => {
+    if (!this.held.has(e.code)) this.pressed.add(e.code);
+    this.held.add(e.code);
+    if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
   };
+  private ku = (e: KeyboardEvent) => { this.held.delete(e.code); };
 
-  private onKeyUp = (e: KeyboardEvent) => {
-    this.keys.delete(e.code);
-  };
-
-  isDown(code: string): boolean {
-    return this.keys.has(code);
-  }
-
-  wasJustPressed(code: string): boolean {
-    return this.justPressed.has(code);
-  }
-
-  flush() {
-    this.justPressed.clear();
-  }
-
+  isHeld(c: string) { return this.held.has(c); }
+  wasPressed(c: string) { return this.pressed.has(c); }
+  flush() { this.pressed.clear(); }
   destroy() {
-    window.removeEventListener('keydown', this.onKeyDown);
-    window.removeEventListener('keyup', this.onKeyUp);
+    window.removeEventListener('keydown', this.kd);
+    window.removeEventListener('keyup', this.ku);
   }
-
-  isLeft(): boolean {
-    return this.isDown('ArrowLeft') || this.isDown('KeyA');
-  }
-
-  isRight(): boolean {
-    return this.isDown('ArrowRight') || this.isDown('KeyD');
-  }
-
-  isJump(): boolean {
-    return this.isDown('ArrowUp') || this.isDown('KeyW') || this.isDown('Space');
-  }
-
-  isAttack(): boolean {
-    return this.isDown('KeyZ') || this.isDown('KeyJ') || this.isDown('Enter');
-  }
+  left()  { return this.isHeld('KeyA') || this.isHeld('ArrowLeft'); }
+  right() { return this.isHeld('KeyD') || this.isHeld('ArrowRight'); }
+  jump()  { return this.wasPressed('Space') || this.wasPressed('ArrowUp') || this.wasPressed('KeyW'); }
 }

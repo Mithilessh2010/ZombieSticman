@@ -1,255 +1,149 @@
 import { Player } from '@/game/entities/Player';
-import { Enemy } from '@/game/entities/Enemy';
-import { Boss } from '@/game/entities/Boss';
-import { Collectible } from '@/game/entities/Collectible';
-import { Platform } from '@/game/entities/Platform';
-import { ParticleSystem } from './ParticleSystem';
+import { Zombie } from '@/game/entities/Zombie';
+import { Bullet } from '@/game/entities/Bullet';
+import { Drop } from '@/game/entities/Drop';
+import { ParticleSystem } from '@/game/engine/ParticleSystem';
 
 export class Renderer {
-  private ctx: CanvasRenderingContext2D;
-  public width: number;
-  public height: number;
+  ctx: CanvasRenderingContext2D;
+  w: number; h: number;
 
   constructor(canvas: HTMLCanvasElement) {
     this.ctx = canvas.getContext('2d')!;
-    this.width = canvas.width;
-    this.height = canvas.height;
+    this.w = canvas.width; this.h = canvas.height;
   }
 
-  clear(bgColor: string) {
-    this.ctx.fillStyle = bgColor;
-    this.ctx.fillRect(0, 0, this.width, this.height);
+  clear() {
+    const g = this.ctx.createLinearGradient(0, 0, 0, this.h);
+    g.addColorStop(0, '#0c0c1a'); g.addColorStop(1, '#161628');
+    this.ctx.fillStyle = g; this.ctx.fillRect(0, 0, this.w, this.h);
   }
 
-  drawPlatforms(platforms: Platform[]) {
-    for (const p of platforms) {
-      this.ctx.fillStyle = '#4a4a6a';
-      this.ctx.fillRect(p.x, p.y, p.w, p.h);
-      this.ctx.fillStyle = '#6a6a9a';
-      this.ctx.fillRect(p.x, p.y, p.w, 4);
-    }
+  drawGround(groundY: number) {
+    const ctx = this.ctx;
+    ctx.fillStyle = '#2a2a44';
+    ctx.fillRect(0, groundY, this.w, this.h - groundY);
+    ctx.fillStyle = '#4a4a7a';
+    ctx.fillRect(0, groundY, this.w, 4);
   }
 
-  drawStickman(
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    color: string,
-    facing: number,
-    isAttacking: boolean,
-    flash: boolean
+  private stickman(
+    x: number, y: number, w: number, h: number,
+    color: string, facing: number, flash: boolean, armed = false
   ) {
     const ctx = this.ctx;
-    const cx = x + w / 2;
-    const headR = w * 0.28;
-    const headY = y + headR;
-    const bodyTop = headY + headR;
-    const bodyBot = y + h * 0.6;
+    ctx.strokeStyle = flash ? '#fff' : color;
+    ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+    const cx = x + w/2;
+    const hr = w * 0.27;
+    const headY = y + hr;
+    const bodyTop = headY + hr;
+    const bodyBot = y + h * 0.62;
     const legY = y + h;
 
-    ctx.strokeStyle = flash ? '#ffffff' : color;
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = 'round';
-
     // head
-    ctx.beginPath();
-    ctx.arc(cx, headY, headR, 0, Math.PI * 2);
-    ctx.stroke();
-
+    ctx.beginPath(); ctx.arc(cx, headY, hr, 0, Math.PI*2); ctx.stroke();
     // body
-    ctx.beginPath();
-    ctx.moveTo(cx, bodyTop);
-    ctx.lineTo(cx, bodyBot);
-    ctx.stroke();
-
+    ctx.beginPath(); ctx.moveTo(cx, bodyTop); ctx.lineTo(cx, bodyBot); ctx.stroke();
     // legs
-    ctx.beginPath();
-    ctx.moveTo(cx, bodyBot);
-    ctx.lineTo(cx - w * 0.3, legY);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(cx, bodyBot);
-    ctx.lineTo(cx + w * 0.3, legY);
-    ctx.stroke();
-
+    ctx.beginPath(); ctx.moveTo(cx, bodyBot); ctx.lineTo(cx - w*0.28, legY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, bodyBot); ctx.lineTo(cx + w*0.28, legY); ctx.stroke();
     // arms
-    const armY = bodyTop + (bodyBot - bodyTop) * 0.3;
-    if (isAttacking) {
-      const atkX = cx + facing * w * 0.7;
-      ctx.beginPath();
-      ctx.moveTo(cx, armY);
-      ctx.lineTo(atkX, armY - h * 0.05);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(cx, armY);
-      ctx.lineTo(cx - facing * w * 0.35, armY + h * 0.1);
-      ctx.stroke();
+    const ay = bodyTop + (bodyBot - bodyTop)*0.28;
+    if (armed) {
+      ctx.beginPath(); ctx.moveTo(cx, ay); ctx.lineTo(cx + facing * w*0.65, ay); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx, ay); ctx.lineTo(cx - facing * w*0.35, ay + h*0.12); ctx.stroke();
     } else {
-      ctx.beginPath();
-      ctx.moveTo(cx, armY);
-      ctx.lineTo(cx + facing * w * 0.4, armY + h * 0.15);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(cx, armY);
-      ctx.lineTo(cx - facing * w * 0.4, armY + h * 0.15);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx, ay); ctx.lineTo(cx + facing * w*0.38, ay + h*0.14); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx, ay); ctx.lineTo(cx - facing * w*0.38, ay + h*0.14); ctx.stroke();
     }
   }
 
-  drawPlayer(player: Player) {
-    this.drawStickman(
-      player.x,
-      player.y,
-      player.w,
-      player.h,
-      '#4fc3f7',
-      player.facing,
-      player.isAttacking,
-      player.flashTimer > 0
-    );
+  drawPlayer(p: Player) {
+    this.stickman(p.x, p.y, p.w, p.h, '#4fc3f7', p.facing, p.flashTimer > 0, true);
   }
 
-  drawEnemy(enemy: Enemy) {
-    const color = enemy.type === 'tank' ? '#e57373' : enemy.type === 'fast' ? '#ffb300' : '#ef9a9a';
-    this.drawStickman(
-      enemy.x,
-      enemy.y,
-      enemy.w,
-      enemy.h,
-      color,
-      enemy.facing,
-      false,
-      enemy.flashTimer > 0
-    );
+  drawZombie(z: Zombie) {
+    const color = z.type === 'tank' ? '#ef5350' : z.type === 'fast' ? '#ffb300' : '#81c784';
+    this.stickman(z.x, z.y, z.w, z.h, color, z.facing, z.flashTimer > 0, false);
     // health bar
-    const bw = enemy.w;
-    const bh = 4;
-    const bx = enemy.x;
-    const by = enemy.y - 10;
-    this.ctx.fillStyle = '#333';
-    this.ctx.fillRect(bx, by, bw, bh);
-    this.ctx.fillStyle = '#e53935';
-    this.ctx.fillRect(bx, by, bw * (enemy.health / enemy.maxHealth), bh);
+    const bw = z.w; const bh = 4;
+    this.ctx.fillStyle = '#222'; this.ctx.fillRect(z.x, z.y - 9, bw, bh);
+    this.ctx.fillStyle = z.type === 'tank' ? '#ef5350' : z.type === 'fast' ? '#ffb300' : '#66bb6a';
+    this.ctx.fillRect(z.x, z.y - 9, bw * (z.health / z.maxHealth), bh);
   }
 
-  drawBoss(boss: Boss) {
+  drawBullet(b: Bullet) {
     const ctx = this.ctx;
-    const flash = boss.flashTimer > 0;
-    const color = flash ? '#ffffff' : (boss.phase === 2 ? '#ff1744' : '#ce93d8');
-    this.drawStickman(
-      boss.x,
-      boss.y,
-      boss.w,
-      boss.h,
-      color,
-      boss.facing,
-      boss.isAttacking,
-      flash
-    );
-    // crown
-    const cx = boss.x + boss.w / 2;
-    const headR = boss.w * 0.28;
-    const headY = boss.y + headR;
-    ctx.strokeStyle = '#ffd700';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx - headR, headY - headR);
-    ctx.lineTo(cx - headR * 0.5, headY - headR * 1.5);
-    ctx.lineTo(cx, headY - headR);
-    ctx.lineTo(cx + headR * 0.5, headY - headR * 1.5);
-    ctx.lineTo(cx + headR, headY - headR);
-    ctx.stroke();
-    // health bar
-    const bw = boss.w;
-    const bh = 8;
-    const bx = boss.x;
-    const by = boss.y - 16;
-    ctx.fillStyle = '#333';
-    ctx.fillRect(bx, by, bw, bh);
-    ctx.fillStyle = '#d500f9';
-    ctx.fillRect(bx, by, bw * (boss.health / boss.maxHealth), bh);
-    // boss name
-    ctx.fillStyle = '#ce93d8';
-    ctx.font = '12px Courier New';
-    ctx.textAlign = 'center';
-    ctx.fillText('EVIL KING', boss.x + boss.w / 2, boss.y - 22);
+    ctx.fillStyle = b.color;
+    ctx.shadowColor = b.color; ctx.shadowBlur = 6;
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.size, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  drawDrop(d: Drop) {
+    const ctx = this.ctx;
+    if (d.type === 'xp') {
+      ctx.fillStyle = '#b39ddb';
+      ctx.shadowColor = '#b39ddb'; ctx.shadowBlur = 8;
+    } else {
+      ctx.fillStyle = '#ffd700';
+      ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 8;
+    }
+    ctx.beginPath(); ctx.arc(d.x + d.w/2, d.y + d.h/2, d.w/2, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#fff'; ctx.font = '8px Courier New'; ctx.textAlign = 'center';
+    ctx.fillText(d.type === 'xp' ? 'xp' : '$', d.x + d.w/2, d.y + d.h/2 + 3);
     ctx.textAlign = 'left';
   }
 
-  drawCollectibles(collectibles: Collectible[]) {
-    const ctx = this.ctx;
-    for (const c of collectibles) {
-      if (c.type === 'coin') {
-        ctx.fillStyle = '#ffd700';
-        ctx.beginPath();
-        ctx.arc(c.x + c.w / 2, c.y + c.h / 2, c.w / 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#ffaa00';
-        ctx.font = '8px Courier New';
-        ctx.textAlign = 'center';
-        ctx.fillText('$', c.x + c.w / 2, c.y + c.h / 2 + 3);
-        ctx.textAlign = 'left';
-      } else {
-        ctx.fillStyle = c.type === 'potion_speed' ? '#29b6f6' : c.type === 'potion_damage' ? '#ef5350' : '#66bb6a';
-        ctx.beginPath();
-        ctx.arc(c.x + c.w / 2, c.y + c.h / 2, c.w / 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#fff';
-        ctx.font = '9px Courier New';
-        ctx.textAlign = 'center';
-        ctx.fillText('+', c.x + c.w / 2, c.y + c.h / 2 + 3);
-        ctx.textAlign = 'left';
-      }
-    }
-  }
+  drawParticles(ps: ParticleSystem) { ps.draw(this.ctx); }
 
-  drawProjectiles(projectiles: { x: number; y: number; w: number; h: number; color: string }[]) {
+  drawHUD(
+    health: number, maxHealth: number,
+    xp: number, xpNext: number,
+    level: number, coins: number, kills: number, time: number,
+    gunName: string, gunColor: string
+  ) {
     const ctx = this.ctx;
-    for (const p of projectiles) {
-      ctx.fillStyle = p.color;
-      ctx.beginPath();
-      ctx.arc(p.x + p.w / 2, p.y + p.h / 2, p.w / 2, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
+    const pad = 12;
 
-  drawHUD(health: number, maxHealth: number, coins: number, levelName: string) {
-    const ctx = this.ctx;
-    // health bar bg
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(10, 10, 204, 22);
+    // HP bar
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(pad, pad, 204, 20);
     ctx.fillStyle = '#c62828';
-    ctx.fillRect(12, 12, 200, 18);
-    ctx.fillStyle = '#e53935';
-    ctx.fillRect(12, 12, Math.max(0, 200 * (health / maxHealth)), 18);
-    ctx.fillStyle = '#fff';
-    ctx.font = '11px Courier New';
-    ctx.fillText(`HP ${health}/${maxHealth}`, 16, 25);
+    ctx.fillRect(pad+2, pad+2, 200, 16);
+    ctx.fillStyle = '#ef5350';
+    ctx.fillRect(pad+2, pad+2, Math.max(0, 200*(health/maxHealth)), 16);
+    ctx.fillStyle = '#fff'; ctx.font = '11px Courier New';
+    ctx.fillText(`HP ${Math.ceil(health)}/${maxHealth}`, pad+6, pad+14);
 
-    // coins
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(10, 38, 120, 20);
-    ctx.fillStyle = '#ffd700';
-    ctx.font = '13px Courier New';
-    ctx.fillText(`💰 ${coins}`, 16, 53);
+    // XP bar
+    const xby = pad + 26;
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(pad, xby, 204, 14);
+    ctx.fillStyle = '#4527a0';
+    ctx.fillRect(pad+2, xby+2, 200, 10);
+    ctx.fillStyle = '#b39ddb';
+    ctx.fillRect(pad+2, xby+2, 200*(xp/xpNext), 10);
+    ctx.fillStyle = '#e0e0e0'; ctx.font = '9px Courier New';
+    ctx.fillText(`LVL ${level}  XP ${xp}/${xpNext}`, pad+4, xby+10);
 
-    // level name
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(this.width / 2 - 80, 10, 160, 22);
-    ctx.fillStyle = '#b0bec5';
-    ctx.font = '13px Courier New';
-    ctx.textAlign = 'center';
-    ctx.fillText(levelName, this.width / 2, 26);
+    // coins & kills & time
+    ctx.fillStyle = '#ffd700'; ctx.font = '13px Courier New';
+    ctx.fillText(`💰 ${coins}`, pad, xby + 30);
+    ctx.fillStyle = '#90a4ae'; ctx.font = '12px Courier New';
+    ctx.fillText(`☠ ${kills}   ⏱ ${Math.floor(time)}s`, pad, xby + 48);
+
+    // gun name top-right
+    const gx = this.w - 130;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(gx - 6, pad - 2, 128, 22);
+    ctx.fillStyle = gunColor; ctx.font = 'bold 13px Courier New'; ctx.textAlign = 'right';
+    ctx.fillText(`🔫 ${gunName}`, this.w - pad, pad + 13);
     ctx.textAlign = 'left';
 
     // controls hint
-    ctx.fillStyle = 'rgba(255,255,255,0.25)';
-    ctx.font = '10px Courier New';
-    ctx.fillText('WASD/Arrows: Move  Z/J/Enter: Punch', 10, this.height - 10);
-  }
-
-  drawParticles(ps: ParticleSystem) {
-    ps.draw(this.ctx);
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.font = '9px Courier New';
+    ctx.fillText('A/D: Move  Space: Jump  Auto-shoots nearest zombie', pad, this.h - 8);
   }
 }

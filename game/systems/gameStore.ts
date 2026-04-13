@@ -1,97 +1,165 @@
 import { create } from 'zustand';
-import { BASE_STATS, PlayerStats, pickRandomUpgrades, UpgradeOption } from '@/game/data/gameData';
+import { persist } from 'zustand/middleware';
+import { RunStats, BASE_RUN_STATS, UpgradeDef, pickUpgrades } from '@/game/data/upgrades';
+import { GUNS } from '@/game/data/guns';
 
-export type Screen =
-  | 'menu'
-  | 'story'
-  | 'playing'
-  | 'upgrade'
-  | 'gameover'
-  | 'victory';
+export type Screen = 'menu' | 'shop' | 'inventory' | 'playing' | 'upgrade' | 'gameover';
 
-export interface GameState {
-  screen: Screen;
-  currentLevel: number;
-  playerStats: PlayerStats;
-  playerHealth: number;
+interface PersistentState {
   coins: number;
-  totalCoins: number;
-  enemiesDefeated: number;
-  storyText: string;
-  upgradeChoices: UpgradeOption[];
-  setScreen: (s: Screen) => void;
-  setLevel: (l: number) => void;
-  setPlayerStats: (s: PlayerStats) => void;
-  setPlayerHealth: (h: number) => void;
-  addCoins: (n: number) => void;
-  addEnemyKill: () => void;
-  showStory: (text: string, next: Screen) => void;
-  storyNext: Screen;
-  proceedStory: () => void;
-  showUpgrades: () => void;
-  applyUpgrade: (id: string) => void;
-  resetGame: () => void;
+  ownedGunIds: string[];
+  equippedGunId: string;
 }
 
-export const useGameStore = create<GameState>((set, get) => ({
-  screen: 'menu',
-  currentLevel: 1,
-  playerStats: { ...BASE_STATS },
-  playerHealth: BASE_STATS.maxHealth,
-  coins: 0,
-  totalCoins: 0,
-  enemiesDefeated: 0,
-  storyText: '',
-  upgradeChoices: [],
-  storyNext: 'playing',
+interface SessionState {
+  screen: Screen;
+  runStats: RunStats;
+  runHealth: number;
+  runCoins: number;
+  runXp: number;
+  runLevel: number;
+  xpToNext: number;
+  enemiesKilled: number;
+  timeAlive: number;
+  upgradeChoices: UpgradeDef[];
+}
 
-  setScreen: (screen) => set({ screen }),
-  setLevel: (currentLevel) => set({ currentLevel }),
-  setPlayerStats: (playerStats) => set({ playerStats }),
-  setPlayerHealth: (playerHealth) => set({ playerHealth }),
+interface Actions {
+  setScreen: (s: Screen) => void;
+  buyGun: (id: string) => void;
+  equipGun: (id: string) => void;
+  startRun: () => void;
+  applyUpgrade: (id: string) => void;
+  addRunCoins: (n: number) => void;
+  addRunXp: (n: number) => void;
+  addKill: () => void;
+  tickTime: (dt: number) => void;
+  takeDamage: (n: number) => void;
+  setRunHealth: (h: number) => void;
+  triggerLevelUp: () => void;
+  endRun: () => void;
+  showUpgrades: () => void;
+}
 
-  addCoins: (n) =>
-    set((s) => ({
-      coins: s.coins + Math.floor(n * s.playerStats.coinMultiplier),
-      totalCoins: s.totalCoins + Math.floor(n * s.playerStats.coinMultiplier),
-    })),
+export type GameStore = PersistentState & SessionState & Actions;
 
-  addEnemyKill: () => set((s) => ({ enemiesDefeated: s.enemiesDefeated + 1 })),
+const XP_BASE = 80;
+function xpForLevel(level: number) { return Math.floor(XP_BASE * Math.pow(1.25, level - 1)); }
 
-  showStory: (text, next) =>
-    set({ screen: 'story', storyText: text, storyNext: next }),
-
-  proceedStory: () => {
-    const next = get().storyNext;
-    if (next === 'upgrade') {
-      const choices = pickRandomUpgrades(3);
-      set({ screen: next, upgradeChoices: choices });
-    } else {
-      set({ screen: next });
-    }
-  },
-
-  showUpgrades: () => {
-    const choices = pickRandomUpgrades(3);
-    set({ screen: 'upgrade', upgradeChoices: choices });
-  },
-
-  applyUpgrade: (id) => {
-    const { upgradeChoices, playerStats } = get();
-    const choice = upgradeChoices.find((u) => u.id === id);
-    if (!choice) return;
-    const newStats = choice.apply(playerStats);
-    set({ playerStats: newStats, playerHealth: Math.min(get().playerHealth + 15, newStats.maxHealth) });
-  },
-
-  resetGame: () =>
-    set({
-      screen: 'menu',
-      currentLevel: 1,
-      playerStats: { ...BASE_STATS },
-      playerHealth: BASE_STATS.maxHealth,
+export const useGameStore = create<GameStore>()(
+  persist(
+    (set, get) => ({
+      // --- persistent ---
       coins: 0,
-      totalCoins: 0,
-      enemiesDefeated: 0,
+      ownedGunIds: ['pistol'],
+      equippedGunId: 'pistol',
+
+      // --- session ---
+      screen: 'menu',
+      runStats: { ...BASE_RUN_STATS },
+      runHealth: BASE_RUN_STATS.maxHealth,
+      runCoins: 0,
+      runXp: 0,
+      runLevel: 1,
+      xpToNext: XP_BASE,
+      enemiesKilled: 0,
+      timeAlive: 0,
+      upgradeChoices: [],
+
+      // --- actions ---
+      setScreen: (screen) => set({ screen }),
+
+      buyGun: (id) => {
+        const gun = GUNS.find((g) => g.id === id);
+        if (!gun) return;
+        const { coins, ownedGunIds } = get();
+        if (ownedGunIds.includes(id)) return;
+        if (coins < gun.price) return;
+        set({ coins: coins - gun.price, ownedGunIds: [...ownedGunIds, id] });
+      },
+
+      equipGun: (id) => {
+        if (get().ownedGunIds.includes(id)) set({ equippedGunId: id });
+      },
+
+      startRun: () => {
+        const base = { ...BASE_RUN_STATS };
+        set({
+          screen: 'playing',
+          runStats: base,
+          runHealth: base.maxHealth,
+          runCoins: 0,
+          runXp: 0,
+          runLevel: 1,
+          xpToNext: XP_BASE,
+          enemiesKilled: 0,
+          timeAlive: 0,
+          upgradeChoices: [],
+        });
+      },
+
+      applyUpgrade: (id) => {
+        const { upgradeChoices, runStats, runHealth } = get();
+        const u = upgradeChoices.find((x) => x.id === id);
+        if (!u) return;
+        const newStats = u.apply(runStats);
+        set({
+          runStats: newStats,
+          runHealth: Math.min(runHealth + 10, newStats.maxHealth),
+          screen: 'playing',
+        });
+      },
+
+      addRunCoins: (n) => set((s) => ({ runCoins: s.runCoins + n })),
+      addKill: () => set((s) => ({ enemiesKilled: s.enemiesKilled + 1 })),
+      tickTime: (dt) => set((s) => ({ timeAlive: s.timeAlive + dt })),
+
+      addRunXp: (n) => {
+        const { runXp, xpToNext, runLevel, runStats } = get();
+        const gained = Math.floor(n * runStats.xpGainMult);
+        const newXp = runXp + gained;
+        if (newXp >= xpToNext) {
+          get().triggerLevelUp();
+        } else {
+          set({ runXp: newXp });
+        }
+      },
+
+      triggerLevelUp: () => {
+        const { runLevel, runXp, xpToNext } = get();
+        const newLevel = runLevel + 1;
+        const overflow = runXp - xpToNext;
+        set({
+          runLevel: newLevel,
+          runXp: Math.max(0, overflow),
+          xpToNext: xpForLevel(newLevel),
+          upgradeChoices: pickUpgrades(3),
+          screen: 'upgrade',
+        });
+      },
+
+      takeDamage: (n) => {
+        const h = get().runHealth - n;
+        if (h <= 0) {
+          set({ runHealth: 0 });
+          get().endRun();
+        } else {
+          set({ runHealth: h });
+        }
+      },
+
+      setRunHealth: (runHealth) => set({ runHealth }),
+
+      showUpgrades: () => set({ upgradeChoices: pickUpgrades(3), screen: 'upgrade' }),
+
+      endRun: () => {
+        const { runCoins, coins } = get();
+        set({ coins: coins + runCoins, screen: 'gameover' });
+      },
     }),
-}));
+    {
+      name: 'stickman-save',
+      partialize: (s) => ({ coins: s.coins, ownedGunIds: s.ownedGunIds, equippedGunId: s.equippedGunId }),
+    }
+  )
+);

@@ -1,53 +1,33 @@
-export interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  life: number;
-  maxLife: number;
-  color: string;
-  size: number;
+interface Particle {
+  x: number; y: number; vx: number; vy: number;
+  life: number; maxLife: number; color: string; r: number;
 }
 
 export class ParticleSystem {
-  private particles: Particle[] = [];
+  private list: Particle[] = [];
 
-  emit(x: number, y: number, color: string, count: number, speed = 120) {
+  emit(x: number, y: number, color: string, count: number, speed = 130) {
     for (let i = 0; i < count; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const spd = speed * (0.5 + Math.random() * 0.5);
-      this.particles.push({
-        x,
-        y,
-        vx: Math.cos(angle) * spd,
-        vy: Math.sin(angle) * spd - 60,
-        life: 0.6 + Math.random() * 0.4,
-        maxLife: 0.6 + Math.random() * 0.4,
-        color,
-        size: 2 + Math.random() * 3,
-      });
+      const a = Math.random() * Math.PI * 2;
+      const s = speed * (0.4 + Math.random() * 0.6);
+      const life = 0.35 + Math.random() * 0.45;
+      this.list.push({ x, y, vx: Math.cos(a)*s, vy: Math.sin(a)*s - 40, life, maxLife: life, color, r: 1.5 + Math.random()*3 });
     }
   }
 
   update(dt: number) {
-    for (let i = this.particles.length - 1; i >= 0; i--) {
-      const p = this.particles[i];
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.vy += 200 * dt;
-      p.life -= dt;
-      if (p.life <= 0) this.particles.splice(i, 1);
+    for (let i = this.list.length - 1; i >= 0; i--) {
+      const p = this.list[i];
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 280 * dt; p.life -= dt;
+      if (p.life <= 0) this.list.splice(i, 1);
     }
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    for (const p of this.particles) {
-      const alpha = p.life / p.maxLife;
-      ctx.globalAlpha = alpha;
+    for (const p of this.list) {
+      ctx.globalAlpha = p.life / p.maxLife;
       ctx.fillStyle = p.color;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
     }
     ctx.globalAlpha = 1;
   }

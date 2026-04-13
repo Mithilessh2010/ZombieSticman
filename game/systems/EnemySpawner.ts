@@ -1,46 +1,36 @@
-import { Enemy, EnemyType } from '@/game/entities/Enemy';
-import { LevelConfig } from '@/game/data/gameData';
+import { Zombie, ZombieType } from '@/game/entities/Zombie';
 
 export class EnemySpawner {
-  private canvasWidth: number;
-  private canvasHeight: number;
+  private timer = 0;
+  private cw: number;
+  private groundY: number;
 
-  constructor(canvasWidth: number, canvasHeight: number) {
-    this.canvasWidth = canvasWidth;
-    this.canvasHeight = canvasHeight;
+  constructor(cw: number, groundY: number) { this.cw = cw; this.groundY = groundY; }
+
+  update(dt: number, difficulty: number): Zombie[] {
+    const interval = Math.max(0.38, 2.2 - difficulty * 0.04);
+    this.timer += dt;
+    const spawned: Zombie[] = [];
+    while (this.timer >= interval) {
+      this.timer -= interval;
+      spawned.push(this.spawnOne(difficulty));
+    }
+    return spawned;
   }
 
-  spawnForLevel(level: LevelConfig): Enemy[] {
-    const enemies: Enemy[] = [];
-    const groundY = this.canvasHeight - 40;
-
-    for (let i = 0; i < level.enemyCount; i++) {
-      const side = i % 2 === 0 ? 1 : -1;
-      const x = side === 1
-        ? this.canvasWidth - 80 - Math.random() * 200
-        : 60 + Math.random() * 200;
-      const y = groundY - 60;
-      const type = this.pickType(level.id, i);
-      enemies.push(new Enemy(x, y, type, level.enemySpeedMult, level.enemyHealthMult));
-    }
-    return enemies;
+  private spawnOne(diff: number): Zombie {
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const x = side === -1 ? -40 : this.cw + 10;
+    const y = this.groundY - 60;
+    const type = this.pickType(diff);
+    return new Zombie(x, y, type, diff);
   }
 
-  private pickType(levelId: number, index: number): EnemyType {
-    if (levelId >= 4) {
-      if (index % 4 === 0) return 'tank';
-      if (index % 3 === 0) return 'fast';
-      return 'basic';
-    }
-    if (levelId >= 3) {
-      if (index % 5 === 0) return 'tank';
-      if (index % 3 === 0) return 'fast';
-      return 'basic';
-    }
-    if (levelId >= 2) {
-      if (index % 4 === 0) return 'fast';
-      return 'basic';
-    }
+  private pickType(diff: number): ZombieType {
+    const r = Math.random();
+    if (diff > 20 && r < 0.18) return 'tank';
+    if (diff > 10 && r < 0.28) return 'fast';
+    if (diff > 5  && r < 0.20) return 'fast';
     return 'basic';
   }
 }

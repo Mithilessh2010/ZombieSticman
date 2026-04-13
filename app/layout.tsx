@@ -3,7 +3,7 @@ import '../styles/globals.css';
 
 export const metadata: Metadata = {
   title: 'Stickman: Last Stand',
-  description: 'A story-driven stickman action platformer',
+  description: 'Zombie survival shooter',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
