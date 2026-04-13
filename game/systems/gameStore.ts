@@ -63,7 +63,12 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   proceedStory: () => {
     const next = get().storyNext;
-    set({ screen: next });
+    if (next === 'upgrade') {
+      const choices = pickRandomUpgrades(3);
+      set({ screen: next, upgradeChoices: choices });
+    } else {
+      set({ screen: next });
+    }
   },
 
   showUpgrades: () => {
