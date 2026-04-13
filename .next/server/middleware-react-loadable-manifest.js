@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST='{"app/page.tsx -> @/components/GameRoot":{"id":4970,"files":["static/chunks/119.3f4d9063ee2489c5.js","static/chunks/970.6c98cb9c16c24756.js"]}}';
+self.__REACT_LOADABLE_MANIFEST='{"app/page.tsx -> @/components/GameRoot":{"id":1227,"files":["static/chunks/119.3f4d9063ee2489c5.js","static/chunks/227.e530e35e637962df.js"]}}';

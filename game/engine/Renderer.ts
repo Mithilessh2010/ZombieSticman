@@ -2,6 +2,7 @@ import { Player } from '@/game/entities/Player';
 import { Zombie } from '@/game/entities/Zombie';
 import { Bullet } from '@/game/entities/Bullet';
 import { Drop } from '@/game/entities/Drop';
+import { Platform } from '@/game/entities/Platform';
 import { ParticleSystem } from '@/game/engine/ParticleSystem';
 
 export class Renderer {
@@ -25,6 +26,16 @@ export class Renderer {
     ctx.fillRect(0, groundY, this.w, this.h - groundY);
     ctx.fillStyle = '#4a4a7a';
     ctx.fillRect(0, groundY, this.w, 4);
+  }
+
+  drawPlatforms(platforms: Platform[]) {
+    const ctx = this.ctx;
+    for (const p of platforms) {
+      ctx.fillStyle = '#3a3a5a';
+      ctx.fillRect(p.x, p.y, p.w, p.h);
+      ctx.fillStyle = '#5a5a8a';
+      ctx.fillRect(p.x, p.y, p.w, 4);
+    }
   }
 
   private stickman(

@@ -5,6 +5,7 @@ import { Player } from '@/game/entities/Player';
 import { Zombie } from '@/game/entities/Zombie';
 import { Bullet } from '@/game/entities/Bullet';
 import { Drop } from '@/game/entities/Drop';
+import { Platform, buildPlatforms, resolveCollision } from '@/game/entities/Platform';
 import { EnemySpawner } from '@/game/systems/EnemySpawner';
 import { RunStats } from '@/game/data/upgrades';
 import { GunDef, getGun } from '@/game/data/guns';
@@ -24,6 +25,7 @@ export class GameEngine {
   private zombies: Zombie[] = [];
   private bullets: Bullet[] = [];
   private drops: Drop[] = [];
+  private platforms: Platform[];
   private spawner: EnemySpawner;
   private gun: GunDef | null;
   private stats: RunStats;
@@ -37,11 +39,12 @@ export class GameEngine {
     this.renderer = new Renderer(canvas);
     this.input = new InputHandler(canvas);
     this.particles = new ParticleSystem();
-    this.spawner = new EnemySpawner(CW, GROUND_Y);
+    this.platforms = buildPlatforms(CW, CH);
+    this.spawner = new EnemySpawner(CW, CH - 50);
     this.gun = gunId ? getGun(gunId) : null;
     this.stats = stats;
     this.cb = cb;
-    this.player = new Player(CW / 2 - 14, GROUND_Y - 56);
+    this.player = new Player(CW / 2 - 14, CH - 100);
   }
 
   start() { this.last = performance.now(); this.raf = requestAnimationFrame(this.loop); }
@@ -64,6 +67,9 @@ export class GameEngine {
     const p = this.player;
     p.update(dt, this.input, this.stats, GROUND_Y, CW);
 
+    // Apply platform collision to player
+    resolveCollision(p, this.platforms);
+
     // handle punch attack
     if (this.input.punch() && p.punchCooldown <= 0) {
       this.punch();
@@ -85,6 +91,9 @@ export class GameEngine {
     for (const z of this.zombies) {
       if (z.dead) continue;
       z.update(dt, p.cx(), GROUND_Y);
+
+      // Apply platform collision to zombies (keep them on ground level)
+      resolveCollision(z, this.platforms);
 
       // zombie hits player
       if (z.overlaps(p) && z.attackCooldown <= 0) {
@@ -198,6 +207,7 @@ export class GameEngine {
   private draw() {
     this.renderer.clear();
     this.renderer.drawGround(GROUND_Y);
+    this.renderer.drawPlatforms(this.platforms);
     for (const d of this.drops) this.renderer.drawDrop(d);
     for (const z of this.zombies) this.renderer.drawZombie(z);
     for (const b of this.bullets) this.renderer.drawBullet(b);
