@@ -7,9 +7,17 @@ import { ARMOR } from '@/game/data/armor';
 import { POTIONS } from '@/game/data/potions';
 
 export default function ShopScreen() {
-  const { coins, ownedGunIds, ownedArmorIds, buyGun, buyArmor, buyPotion, setScreen } = useGameStore();
-  const [tab, setTab] = useState<'guns' | 'armor' | 'potions'>('guns');
+  const { coins, ownedGunIds, ownedArmorIds, currentWave, buyGun, buyArmor, buyPotion, continueToNextWave } = useGameStore();
+  const [tab, setTab] = useState<'guns' | 'armor' | 'potions'>('armor');
   const [potionQuantity, setPotionQuantity] = useState<{ [key: string]: number }>({ health_small: 1, health_medium: 1, health_large: 1 });
+
+  const showGuns = currentWave > 1;
+  const tabList = showGuns ? ['guns', 'armor', 'potions'] : ['armor', 'potions'];
+
+  // Ensure tab is valid for current wave
+  if (tab === 'guns' && !showGuns) {
+    setTab('armor');
+  }
 
   return (
     <motion.div className="absolute inset-0 flex flex-col items-center"
@@ -17,19 +25,25 @@ export default function ShopScreen() {
       initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}>
 
       <div className="w-full flex items-center justify-between px-8 pt-6 pb-4">
-        <motion.button onClick={() => setScreen('menu')}
-          className="text-sm px-4 py-2 border rounded"
-          style={{ borderColor:'#546e7a', color:'#90a4ae', fontFamily:'Courier New', cursor:'pointer' }}
-          whileHover={{ scale:1.05 }}>
-          ← BACK
-        </motion.button>
-        <h2 style={{ color:'#ffd700', fontFamily:'Courier New', fontSize:22, letterSpacing:'0.3em' }}>SHOP</h2>
+        <motion.h2 style={{ color:'#4fc3f7', fontFamily:'Courier New', fontSize:20, letterSpacing:'0.2em', margin:0 }}>
+          WAVE {currentWave}
+        </motion.h2>
         <span style={{ color:'#ffd700', fontFamily:'Courier New', fontSize:15 }}>Coins: {coins}</span>
       </div>
 
-      {/* Tab buttons */}
+      {/* Wave 1 special message */}
+      {currentWave === 1 && (
+        <motion.div className="mx-8 mb-6 p-4 rounded border-2"
+          style={{ borderColor:'#ff6f00', color:'#ff6f00', fontFamily:'Courier New', fontSize:13, textAlign:'center', background:'#ff6f0011' }}
+          initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.15 }}>
+          <div className="font-bold mb-1">START WITH FISTS ONLY</div>
+          <div>You begin with melee attacks. Purchase guns after this wave to unlock ranged combat!</div>
+        </motion.div>
+      )}
+
+      {/* Tab buttons - show only available tabs for current wave */}
       <div className="flex gap-4 mb-6">
-        {['guns', 'armor', 'potions'].map((t) => (
+        {tabList.map((t) => (
           <motion.button key={t}
             onClick={() => setTab(t as any)}
             className="px-6 py-2 border rounded text-sm tracking-widest"
@@ -47,8 +61,8 @@ export default function ShopScreen() {
         ))}
       </div>
 
-      {/* Guns tab */}
-      {tab === 'guns' && (
+      {/* Guns tab - only shown after wave 1 */}
+      {showGuns && tab === 'guns' && (
         <div className="grid gap-5 px-8" style={{ gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', width:'100%', maxWidth:900 }}>
           {GUNS.map((gun, i) => {
             const owned = ownedGunIds.includes(gun.id);
@@ -179,6 +193,19 @@ export default function ShopScreen() {
           })}
         </div>
       )}
+
+      {/* Ready button */}
+      <motion.div className="mt-8"
+        initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.3 }}>
+        <motion.button
+          onClick={() => continueToNextWave()}
+          className="px-12 py-3 text-base tracking-widest border-2 rounded"
+          style={{ background:'transparent', borderColor:'#4fc3f7', color:'#4fc3f7', fontFamily:'Courier New', cursor:'pointer' }}
+          whileHover={{ scale:1.05, backgroundColor: '#4fc3f722' }}
+          whileTap={{ scale:0.97 }}>
+          READY FOR WAVE {currentWave + 1}
+        </motion.button>
+      </motion.div>
     </motion.div>
   );
 }
