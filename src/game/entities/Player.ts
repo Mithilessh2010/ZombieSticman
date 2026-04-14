@@ -139,11 +139,11 @@ export class Player extends Entity {
     
     // Arms
     ctx.moveTo(0, -2);
-    if (this.isPunching && this.weapon.id === 'fists') {
+    if (this.isPunching) {
       const punchX = Math.sin(this.punchProgress * Math.PI) * 15;
       ctx.lineTo(10 + punchX, 5);
     } else {
-      ctx.lineTo(10, 5); // Holding gun
+      ctx.lineTo(10, 5); // Holding weapon
     }
     
     // Legs
@@ -156,23 +156,63 @@ export class Player extends Entity {
     
     ctx.stroke();
 
-    // Gun
-    if (this.weapon.id !== 'fists') {
-      ctx.fillStyle = '#4b5563';
-      ctx.fillRect(8, 2, 12, 4);
-    } else {
-      // Draw a fist
+    // Weapon Visuals
+    ctx.save();
+    let weaponX = 10;
+    if (this.isPunching) {
+      weaponX += Math.sin(this.punchProgress * Math.PI) * 15;
+    }
+
+    if (this.weapon.id === 'fists') {
       ctx.fillStyle = '#fca5a5';
       ctx.beginPath();
-      
-      let fistX = 10;
-      if (this.isPunching) {
-        fistX += Math.sin(this.punchProgress * Math.PI) * 15;
-      }
-      
-      ctx.arc(fistX, 5, 3, 0, Math.PI * 2);
+      ctx.arc(weaponX, 5, 3, 0, Math.PI * 2);
       ctx.fill();
+    } else if (this.weapon.id === 'spear') {
+      ctx.strokeStyle = '#92400e'; // Wood
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(weaponX - 10, 5);
+      ctx.lineTo(weaponX + 25, 5);
+      ctx.stroke();
+      
+      ctx.fillStyle = '#94a3b8'; // Metal tip
+      ctx.beginPath();
+      ctx.moveTo(weaponX + 25, 5);
+      ctx.lineTo(weaponX + 35, 5);
+      ctx.lineTo(weaponX + 25, 2);
+      ctx.fill();
+    } else if (this.weapon.id === 'katana') {
+      ctx.strokeStyle = '#e2e8f0'; // Blade
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(weaponX, 5);
+      ctx.lineTo(weaponX + 20, -5);
+      ctx.stroke();
+      
+      ctx.strokeStyle = '#1e293b'; // Handle
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(weaponX, 5);
+      ctx.lineTo(weaponX - 5, 8);
+      ctx.stroke();
+    } else if (this.weapon.id === 'crossbow') {
+      ctx.strokeStyle = '#4b5563';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(weaponX, 5);
+      ctx.lineTo(weaponX + 15, 5); // Body
+      ctx.moveTo(weaponX + 10, 0);
+      ctx.lineTo(weaponX + 10, 10); // Bow part
+      ctx.stroke();
+    } else {
+      // Default Gun
+      ctx.fillStyle = '#4b5563';
+      ctx.fillRect(weaponX - 2, 2, 15, 6);
+      ctx.fillStyle = '#1f2937';
+      ctx.fillRect(weaponX + 8, 2, 5, 2);
     }
+    ctx.restore();
 
     ctx.restore();
 
@@ -194,7 +234,7 @@ export class Player extends Entity {
   shoot() {
     this.lastShot = Date.now();
     
-    if (this.weapon.id === 'fists') {
+    if (this.weapon.bulletSpeed === 0) {
       this.isPunching = true;
       this.punchProgress = 0;
     }

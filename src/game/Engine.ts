@@ -55,7 +55,7 @@ export class Engine {
   }
 
   startWave(wave: number) {
-    this.zombiesToSpawn = 10 + (wave - 1) * 5;
+    this.zombiesToSpawn = 5 + (wave - 1) * 5;
     useGameStore.getState().setZombiesRemaining(this.zombiesToSpawn);
     this.spawnTimer = 0;
   }
@@ -119,11 +119,11 @@ export class Engine {
     // Manual Attack
     if (this.input.isMouseDown && this.player.canShoot()) {
       const nearest = this.getNearestZombie();
-      if (this.player.weapon.id === 'fists') {
-        // For fists, we just punch even if no zombie is near (for animation)
+      if (this.player.weapon.bulletSpeed === 0) {
+        // Melee
         this.melee(nearest);
       } else if (nearest) {
-        // For guns, we need a target
+        // Ranged
         this.shoot(nearest);
       }
     }
@@ -141,7 +141,7 @@ export class Engine {
     this.particles.forEach(p => p.update(dt));
 
     // Collisions
-    this.checkCollisions();
+    this.checkCollisions(dt);
 
     // Cleanup
     this.zombies = this.zombies.filter(z => !z.markedForDeletion);
@@ -248,6 +248,11 @@ export class Engine {
             const vy = (Math.random() - 0.5) * 2;
             this.bullets.push(new Bullet(this.player.x + 15, this.player.y + 25, dir * weapon.bulletSpeed, vy, weapon.damage));
         }
+    } else if (weapon.id === 'crossbow') {
+        const bolt = new Bullet(this.player.x + 15, this.player.y + 25, dir * weapon.bulletSpeed, 0, weapon.damage, '#94a3b8');
+        bolt.width = 15;
+        bolt.height = 4;
+        this.bullets.push(bolt);
     } else {
         this.bullets.push(new Bullet(this.player.x + 15, this.player.y + 25, dir * weapon.bulletSpeed, 0, weapon.damage));
     }
@@ -259,10 +264,13 @@ export class Engine {
 
   private melee(target: Zombie | null) {
     const weapon = this.player.weapon;
+    let range = 70;
+    if (weapon.id === 'spear') range = 120;
+    if (weapon.id === 'katana') range = 90;
     
     // Fix: Check both X and Y distance to prevent hitting zombies from platforms above
     if (target && 
-        Math.abs(target.x - this.player.x) < 70 && 
+        Math.abs(target.x - this.player.x) < range && 
         Math.abs(target.y - this.player.y) < 60) {
       this.createExplosion(target.x + target.width / 2, target.y + target.height / 2, target.config.color, 5);
       this.particles.push(new FloatingText(target.x + target.width / 2, target.y, `-${weapon.damage}`, '#ef4444'));
@@ -277,7 +285,7 @@ export class Engine {
     this.player.shoot(); // Triggers animation and cooldown
   }
 
-  private checkCollisions() {
+  private checkCollisions(dt: number) {
     // Bullets vs Zombies
     for (const b of this.bullets) {
       for (const z of this.zombies) {
@@ -297,9 +305,16 @@ export class Engine {
 
     // Zombies vs Player
     for (const z of this.zombies) {
-      if (z.collidesWith(this.player)) {
-        useGameStore.getState().damagePlayer(z.config.damage * 0.1);
-        this.shake = 5;
+      const isColliding = z.collidesWith(this.player);
+      z.tickAttackDelay(dt, isColliding);
+      
+      if (isColliding) {
+        if (z.canAttack()) {
+          useGameStore.getState().damagePlayer(z.config.damage);
+          z.resetAttackCooldown();
+          this.shake = 5;
+          this.createExplosion(this.player.x + this.player.width/2, this.player.y + this.player.height/2, '#ef4444', 5);
+        }
       }
     }
   }

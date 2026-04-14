@@ -18,9 +18,9 @@ export interface ZombieConfig {
 const ZOMBIE_TYPES: Record<ZombieType, ZombieConfig> = {
   BASIC: {
     type: 'BASIC',
-    health: 20,
-    speed: 1.5,
-    damage: 10,
+    health: 15,
+    speed: 1.2,
+    damage: 8,
     color: '#4ade80',
     width: 30,
     height: 50,
@@ -79,6 +79,8 @@ export class Zombie extends Entity {
   maxHealth: number;
   facing: number = 1;
   bob: number = 0;
+  attackCooldown: number = 0;
+  attackDelay: number = 10; // Frames before first attack when in range
 
   constructor(x: number, y: number, type: ZombieType, waveMultiplier: number, difficulty: Difficulty) {
     const config = { ...ZOMBIE_TYPES[type] };
@@ -111,7 +113,30 @@ export class Zombie extends Entity {
     this.vx = dir * this.config.speed;
     this.facing = dir;
     this.bob += 0.1 * dt;
+    
+    if (this.attackCooldown > 0) {
+      this.attackCooldown -= dt;
+    }
+    
     super.update(dt);
+  }
+
+  canAttack() {
+    return this.attackCooldown <= 0 && this.attackDelay <= 0;
+  }
+
+  resetAttackCooldown() {
+    this.attackCooldown = 45; // ~0.75 second cooldown
+  }
+
+  tickAttackDelay(dt: number, isColliding: boolean) {
+    if (isColliding) {
+      if (this.attackDelay > 0) {
+        this.attackDelay -= dt;
+      }
+    } else {
+      this.attackDelay = 8; // Reset to a very short delay when not touching
+    }
   }
 
   draw(ctx: CanvasRenderingContext2D) {
