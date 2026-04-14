@@ -1,9 +1,10 @@
 import { create } from 'zustand';
-import { GameState, PlayerStats, Weapon, Upgrade, GameControls } from '../types/game';
+import { GameState, PlayerStats, Weapon, Upgrade, GameControls, Difficulty } from '../types/game';
 
 interface GameStore {
   gameState: GameState;
   previousGameState: GameState;
+  difficulty: Difficulty;
   stats: PlayerStats;
   currentWave: number;
   zombiesRemaining: number;
@@ -14,6 +15,7 @@ interface GameStore {
   
   // Actions
   setGameState: (state: GameState) => void;
+  setDifficulty: (difficulty: Difficulty) => void;
   setControl: (action: keyof GameControls, key: string) => void;
   addCoins: (amount: number) => void;
   addXP: (amount: number) => void;
@@ -137,6 +139,7 @@ export const useGameStore = create<GameStore>()(
   (set) => ({
     gameState: 'MENU',
     previousGameState: 'MENU',
+    difficulty: 'NORMAL',
     currentWave: 0,
     zombiesRemaining: 0,
     equippedWeaponId: 'fists',
@@ -165,6 +168,8 @@ export const useGameStore = create<GameStore>()(
       previousGameState: state.gameState,
       gameState 
     })),
+
+    setDifficulty: (difficulty) => set({ difficulty }),
     
     setControl: (action, key) => set((state) => ({
       controls: { ...state.controls, [action]: key }

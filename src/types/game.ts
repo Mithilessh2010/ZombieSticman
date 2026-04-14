@@ -1,4 +1,5 @@
 export type GameState = 'MENU' | 'PLAYING' | 'SHOP' | 'GAMEOVER' | 'LEVEL_UP' | 'INVENTORY' | 'SETTINGS';
+export type Difficulty = 'EASY' | 'NORMAL' | 'HARD';
 
 export interface Weapon {
   id: string;

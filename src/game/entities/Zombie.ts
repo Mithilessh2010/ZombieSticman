@@ -1,4 +1,5 @@
 import { Entity } from './Entity';
+import { Difficulty } from '../../types/game';
 
 export type ZombieType = 'BASIC' | 'RUNNER' | 'TANK' | 'EXPLODER' | 'BOSS';
 
@@ -79,12 +80,25 @@ export class Zombie extends Entity {
   facing: number = 1;
   bob: number = 0;
 
-  constructor(x: number, y: number, type: ZombieType, waveMultiplier: number) {
+  constructor(x: number, y: number, type: ZombieType, waveMultiplier: number, difficulty: Difficulty) {
     const config = { ...ZOMBIE_TYPES[type] };
-    // Scale stats with wave - starts easy, gets harder faster
-    config.health *= (1 + waveMultiplier * 0.4);
-    config.speed *= (1 + waveMultiplier * 0.08);
-    config.damage *= (1 + waveMultiplier * 0.15);
+    
+    // Difficulty multipliers
+    const diffMultipliers: Record<Difficulty, { health: number; damage: number; speed: number }> = {
+      EASY: { health: 0.6, damage: 0.5, speed: 0.8 },
+      NORMAL: { health: 1.0, damage: 1.0, speed: 1.0 },
+      HARD: { health: 1.4, damage: 1.5, speed: 1.2 }
+    };
+
+    const dm = diffMultipliers[difficulty];
+    
+    // Wave scaling - starts easy, gets harder faster
+    // First 4 waves have significantly reduced scaling
+    const waveFactor = waveMultiplier <= 4 ? 0.15 : 0.45;
+    
+    config.health *= dm.health * (1 + waveMultiplier * waveFactor);
+    config.speed *= dm.speed * (1 + waveMultiplier * 0.08);
+    config.damage *= dm.damage * (1 + waveMultiplier * 0.15);
 
     super(x, y, config.width, config.height);
     this.config = config;

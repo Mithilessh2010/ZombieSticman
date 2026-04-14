@@ -1,16 +1,24 @@
 import React from 'react';
 import { useGameStore } from '../store/useGameStore';
 import { motion } from 'motion/react';
-import { Play, ShoppingBag, Trophy, Settings } from 'lucide-react';
+import { Play, ShoppingBag, Trophy, Settings, Shield, Zap, Skull } from 'lucide-react';
 import { audioManager } from '../game/systems/AudioManager';
+import { cn } from '../lib/utils';
+import { Difficulty } from '../types/game';
 
 export const MainMenu: React.FC = () => {
-  const { setGameState, nextWave, stats } = useGameStore();
+  const { setGameState, nextWave, stats, difficulty, setDifficulty } = useGameStore();
 
   const handleStart = () => {
     audioManager.init();
     nextWave();
   };
+
+  const difficulties: { id: Difficulty; label: string; icon: React.ReactNode; color: string }[] = [
+    { id: 'EASY', label: 'EASY', icon: <Shield size={16} />, color: 'text-green-400' },
+    { id: 'NORMAL', label: 'NORMAL', icon: <Zap size={16} />, color: 'text-yellow-400' },
+    { id: 'HARD', label: 'HARD', icon: <Skull size={16} />, color: 'text-red-500' },
+  ];
 
   return (
     <div className="fixed inset-0 bg-[#0a0a0a] flex flex-col items-center justify-center p-6 overflow-hidden">
@@ -30,6 +38,32 @@ export const MainMenu: React.FC = () => {
       </motion.div>
 
       <div className="relative z-10 flex flex-col gap-4 w-full max-w-xs">
+        {/* Difficulty Selector */}
+        <div className="flex bg-gray-900/80 p-1 rounded-2xl border border-gray-800 mb-2">
+          {difficulties.map((diff) => (
+            <button
+              key={diff.id}
+              onClick={() => setDifficulty(diff.id)}
+              className={cn(
+                "flex-1 flex flex-col items-center justify-center py-2 rounded-xl transition-all gap-1",
+                difficulty === diff.id 
+                  ? "bg-gray-800 shadow-inner" 
+                  : "hover:bg-gray-800/50 opacity-50 grayscale hover:grayscale-0"
+              )}
+            >
+              <div className={cn(difficulty === diff.id ? diff.color : "text-gray-500")}>
+                {diff.icon}
+              </div>
+              <span className={cn(
+                "text-[10px] font-black tracking-tighter italic",
+                difficulty === diff.id ? "text-white" : "text-gray-500"
+              )}>
+                {diff.label}
+              </span>
+            </button>
+          ))}
+        </div>
+
         <MenuButton 
           icon={<Play fill="currentColor" />} 
           label="START SURVIVAL" 

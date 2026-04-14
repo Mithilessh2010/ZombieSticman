@@ -203,7 +203,9 @@ export class Engine {
   private spawnZombie() {
     const side = Math.random() > 0.5 ? 1 : -1;
     const x = side === 1 ? -50 : this.canvas.width + 50;
-    const wave = useGameStore.getState().currentWave;
+    const state = useGameStore.getState();
+    const wave = state.currentWave;
+    const difficulty = state.difficulty;
     
     let type: ZombieType = 'BASIC';
     const rand = Math.random();
@@ -217,7 +219,7 @@ export class Engine {
         type = 'EXPLODER';
     }
 
-    this.zombies.push(new Zombie(x, this.groundY - 50, type, wave));
+    this.zombies.push(new Zombie(x, this.groundY - 50, type, wave, difficulty));
     this.zombiesToSpawn--;
   }
 
