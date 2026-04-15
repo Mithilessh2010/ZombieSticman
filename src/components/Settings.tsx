@@ -26,6 +26,7 @@ export const Settings: React.FC = () => {
     moveRight: 'Move Right',
     jump: 'Jump',
     inventory: 'Inventory',
+    shoot: 'Shoot',
   };
 
   return (

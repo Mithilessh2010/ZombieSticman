@@ -186,6 +186,7 @@ export const useGameStore = create<GameStore>()(
       moveRight: 'KeyD',
       jump: 'KeyW',
       inventory: 'KeyI',
+      shoot: 'MouseButton',
     },
     stats: {
       maxHealth: 100,

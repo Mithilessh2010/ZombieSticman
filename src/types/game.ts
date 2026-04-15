@@ -52,4 +52,5 @@ export interface GameControls {
   moveRight: string;
   jump: string;
   inventory: string;
+  shoot: string;
 }
