@@ -117,7 +117,9 @@ export class Engine {
     }
 
     // Manual Attack
-    const shouldShoot = this.input.isMouseDown || (state.controls.shoot !== 'MouseButton' && this.input.isPressed(state.controls.shoot));
+    const shouldShoot = state.controls.shoot === 'MouseButton'
+      ? this.input.isMouseDown
+      : this.input.isPressed(state.controls.shoot);
     if (shouldShoot && this.player.canShoot()) {
       const nearest = this.getNearestZombie();
       if (this.player.weapon.bulletSpeed === 0) {
